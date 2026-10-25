@@ -1,0 +1,117 @@
+name: Build Ampex VST3 (macOS universal)
+
+# Builds on Apple hardware (GitHub macOS runner): universal arm64+x86_64 VST3 / AU / Standalone,
+# code-signed (ad-hoc by default, Developer ID if secrets are set), packaged as a .pkg installer,
+# and published as a GitHub Release so the files are plain public downloads.
+#
+# Optional Developer ID signing / notarization via repo secrets:
+#   APPLE_CERT_P12_BASE64, APPLE_CERT_PASSWORD, APPLE_TEAM_ID, APPLE_SIGN_IDENTITY
+#   APPLE_ID, APPLE_APP_PASSWORD   (notarization)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14
+    timeout-minutes: 90
+    env:
+      HAS_CERT: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+      HAS_NOTARY: ${{ secrets.APPLE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import Developer ID certificate (optional)
+        if: env.HAS_CERT != ''
+        env:
+          P12: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          P12_PW: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: |
+          echo "$P12" | base64 --decode > cert.p12
+          security create-keychain -p ci build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci build.keychain
+          security import cert.p12 -k build.keychain -P "$P12_PW" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci build.keychain
+          echo "AMPEX_CODESIGN_IDENTITY=${{ secrets.APPLE_SIGN_IDENTITY }}" >> $GITHUB_ENV
+          echo "AMPEX_DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}" >> $GITHUB_ENV
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+            -DAMPEX_CODESIGN_IDENTITY="${AMPEX_CODESIGN_IDENTITY:--}" \
+            -DAMPEX_DEVELOPMENT_TEAM="${AMPEX_DEVELOPMENT_TEAM:-}"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Sign + verify
+        run: |
+          cd build/Ampex_artefacts/Release
+          ID="${AMPEX_CODESIGN_IDENTITY:--}"
+          for b in VST3/Ampex.vst3 AU/Ampex.component Standalone/Ampex.app; do
+            [ -d "$b" ] || continue
+            if [ "$ID" = "-" ]; then
+              codesign --force --deep --sign - --timestamp=none "$b"
+            else
+              codesign --force --deep --sign "$ID" --timestamp --options runtime "$b"
+            fi
+            codesign --verify --deep --strict --verbose=2 "$b"
+            lipo -info "$b/Contents/MacOS/Ampex"
+          done
+
+      - name: Notarize VST3 (optional)
+        if: env.HAS_NOTARY != '' && env.HAS_CERT != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cd build/Ampex_artefacts/Release
+          ditto -c -k --keepParent VST3/Ampex.vst3 Ampex.vst3.zip
+          xcrun notarytool submit Ampex.vst3.zip --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple VST3/Ampex.vst3
+
+      - name: Package (zip + .pkg installer)
+        run: |
+          cd build/Ampex_artefacts/Release
+          mkdir -p out
+          ditto -c -k --keepParent VST3/Ampex.vst3 out/Ampex.vst3.zip
+          [ -d AU/Ampex.component ] && ditto -c -k --keepParent AU/Ampex.component out/Ampex.component.zip
+          [ -d Standalone/Ampex.app ] && ditto -c -k --keepParent Standalone/Ampex.app out/Ampex-Standalone.app.zip
+          # Installer: Installer.app writes files without the quarantine flag, so no Terminal needed.
+          pkgbuild --component VST3/Ampex.vst3 \
+                   --install-location /Library/Audio/Plug-Ins/VST3 \
+                   --identifier com.ampex.plugin.vst3 --version 1.0.1 \
+                   out/Ampex-VST3-Installer.pkg
+          if [ -d AU/Ampex.component ]; then
+            pkgbuild --component AU/Ampex.component \
+                     --install-location /Library/Audio/Plug-Ins/Components \
+                     --identifier com.ampex.plugin.au --version 1.0.1 \
+                     out/Ampex-AU-Installer.pkg
+          fi
+          ls -la out
+          shasum -a 256 out/* > out/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ampex-macOS-VST3
+          path: build/Ampex_artefacts/Release/out/*
+          if-no-files-found: error
+
+      - name: Publish release (public download links)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" build/Ampex_artefacts/Release/out/* \
+            --repo "${{ github.repository }}" \
+            --title "Ampex VST3 macOS build ${{ github.run_number }}" \
+            --notes "Universal (Apple Silicon + Intel) VST3/AU/Standalone. Use Ampex-VST3-Installer.pkg for Cubase."

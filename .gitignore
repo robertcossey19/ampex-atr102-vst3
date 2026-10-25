@@ -1,0 +1,5 @@
+build/
+build-linux/
+JUCE/
+*.log
+.DS_Store
