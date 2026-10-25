@@ -100,6 +100,39 @@ jobs:
           ls -la out
           shasum -a 256 out/* > out/SHA256SUMS.txt
 
+      - name: Test installer (what the user double-clicks)
+        run: |
+          sudo installer -pkg build/Ampex_artefacts/Release/out/Ampex-VST3-Installer.pkg -target / -verbose
+          test -d /Library/Audio/Plug-Ins/VST3/Ampex.vst3
+          codesign --verify --deep --strict --verbose=2 /Library/Audio/Plug-Ins/VST3/Ampex.vst3
+          xattr -l /Library/Audio/Plug-Ins/VST3/Ampex.vst3 || true
+          lipo -info /Library/Audio/Plug-Ins/VST3/Ampex.vst3/Contents/MacOS/Ampex
+
+      - name: pluginval (strictness 10, GUI tests on)
+        run: |
+          curl -sL -o pv.zip https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
+          unzip -q pv.zip
+          mkdir -p testlogs
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 10 --timeout-ms 600000 \
+              --validate-in-process --output-dir testlogs \
+              /Library/Audio/Plug-Ins/VST3/Ampex.vst3 2>&1 | tee testlogs/pluginval-stdout.txt
+          grep -q "^SUCCESS" testlogs/pluginval-stdout.txt
+
+      - name: Host test (loads installed VST3, sweeps every parameter, opens editor)
+        run: |
+          cmake -S tests/HostTest -B build-hosttest -G Xcode -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                -DFETCHCONTENT_SOURCE_DIR_JUCE="$PWD/build/_deps/juce-src"
+          cmake --build build-hosttest --config Release --parallel
+          ./build-hosttest/AmpexHostTest_artefacts/Release/AmpexHostTest \
+              /Library/Audio/Plug-Ins/VST3/Ampex.vst3 --editor 2>&1 | tee testlogs/hosttest.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Ampex-test-logs
+          path: testlogs/
+          if-no-files-found: warn
+
       - uses: actions/upload-artifact@v4
         with:
           name: Ampex-macOS-VST3

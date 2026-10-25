@@ -1,0 +1,18 @@
+# Loads the real built Ampex.vst3 through JUCE's VST3 hosting, sweeps every parameter
+# and measures the audio, then opens the editor to prove it no longer crashes.
+cmake_minimum_required(VERSION 3.22)
+project(AmpexHostTest VERSION 0.1.0 LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(JUCE_BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+set(JUCE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../JUCE/CMakeLists.txt")
+    add_subdirectory(../../JUCE JUCE)
+else()
+    include(FetchContent)
+    FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 8.0.4 GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(JUCE)
+endif()
+juce_add_console_app(AmpexHostTest PRODUCT_NAME "AmpexHostTest")
+target_sources(AmpexHostTest PRIVATE main.cpp)
+target_compile_definitions(AmpexHostTest PRIVATE JUCE_PLUGINHOST_VST3=1 JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_PLUGINHOST_AU=0 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+target_link_libraries(AmpexHostTest PRIVATE juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_basics juce::juce_recommended_config_flags)
