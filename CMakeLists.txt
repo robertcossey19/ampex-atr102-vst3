@@ -4,7 +4,7 @@
 # ============================================================
 
 cmake_minimum_required(VERSION 3.22)
-project(Ampex VERSION 1.0.1 LANGUAGES C CXX)
+project(Ampex VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -96,6 +96,8 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
+        Source/TapeDSP.h
+        Source/TapeCalibration.inc
         Source/PluginEditor.cpp
         Source/PluginEditor.h
 )

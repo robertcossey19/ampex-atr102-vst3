@@ -87,8 +87,9 @@ int main(int argc, char** argv) {
     for (auto* p : h.plug->getParameters())
         printf("     %-16s = %s\n", p->getName(32).toRawUTF8(), p->getCurrentValueAsText().toRawUTF8());
 
-    printf("== Audio: Input monitor path (defaults) ==\n");
-    { auto y = tail(h.run(1000, -20, 0.5), 16384); CHECK(std::isfinite(rmsDb(y)) && rmsDb(y) > -30, "passes audio, 1 kHz -20 dBFS -> %.2f dBFS", rmsDb(y)); }
+    printf("== Audio: INPUT monitor = hard bypass ==\n");
+    h.setNorm("monitor", 0.0f);
+    { auto y = tail(h.run(1000, -20, 0.5), 16384); CHECK(std::abs(rmsDb(y) - (-23.01)) < 0.1, "unity: 1 kHz -20 dBFS sine -> %.2f dBFS rms (expect -23.01)", rmsDb(y)); }
 
     printf("== Audio: Repro (tape) path ==\n");
     h.setNorm("monitor", 1.0f);
@@ -97,6 +98,21 @@ int main(int argc, char** argv) {
     { auto y = tail(h.run(1000, -20, 1.0), 16384); thd20 = thdPct(y, h.fs, 1000); printf("  -20 dBFS: out %.2f dBFS THD %.3f%%\n", rmsDb(y), thd20); }
     { auto y = tail(h.run(1000, -12, 1.0), 16384); thd12 = thdPct(y, h.fs, 1000); printf("  -12 dBFS: out %.2f dBFS THD %.3f%%\n", rmsDb(y), thd12); }
     CHECK(thd40 < 0.3 && thd20 > thd40 && thd12 > thd20, "tape saturation is level-dependent (no crossover kink): %.3f%% < %.3f%% < %.3f%%", thd40, thd20, thd12);
+    {   // 456 @ 15 ips NAB, 0 VU = 250 nWb/m: 3 % THD (MOL 1072 nWb/m) must land at +12.6 dB over 0 VU = -5.4 dBFS (+/-1 dB)
+        h.setNorm("tapeType", 0.2f); h.setNorm("flux", 0.33f);
+        double thdM = thdPct(tail(h.run(1000, -5.4, 0.8), 16384), h.fs, 1000);
+        CHECK(thdM > 2.3 && thdM < 3.9, "456 MOL: THD at -5.4 dBFS (1072 nWb/m) = %.2f%% (data sheet 3 %%)", thdM);
+    }
+    {   // small-signal frequency response flat at 15 ips [ATR Table 1-4: +/-0.75 dB 100 Hz-15 kHz]
+        double r100 = rmsDb(tail(h.run(100, -40, 0.6), 16384)), r1k = rmsDb(tail(h.run(1000, -40, 0.6), 16384)), r10k = rmsDb(tail(h.run(10000, -40, 0.6), 16384));
+        CHECK(std::abs(r100 - r1k) < 0.75 && std::abs(r10k - r1k) < 0.75, "response 15 ips: 100 Hz %+.2f / 10 kHz %+.2f dB re 1 kHz", r100 - r1k, r10k - r1k);
+        h.setNorm("speed", 0.0f); double s1k = rmsDb(tail(h.run(1000, -40, 0.6), 16384)), s10k = rmsDb(tail(h.run(10000, -40, 0.6), 16384)); h.setNorm("speed", 0.5f);
+        CHECK(std::abs(s10k - s1k) < 2.0, "response 7.5 ips: 10 kHz %+.2f dB re 1 kHz (spec +/-2 dB)", s10k - s1k);
+    }
+    {   // HF saturation: a hot 10 kHz tone compresses more at 7.5 ips than at 15 ips (SOL10 is ~9 dB below MOL at 7.5 ips per the SM911 sheet)
+        double a15 = rmsDb(tail(h.run(10000, -6, 0.6), 16384)); h.setNorm("speed", 0.0f); double a75 = rmsDb(tail(h.run(10000, -6, 0.6), 16384)); h.setNorm("speed", 0.5f);
+        CHECK(a15 - a75 > 1.5, "HF saturation: 10 kHz at -6 dBFS is %.2f dB lower at 7.5 ips than at 15 ips", a15 - a75);
+    }
 
     printf("== Knobs / switches change the audio ==\n");
     auto level = [&](double f = 1000, double db = -20) { return rmsDb(tail(h.run(f, db, 0.4), 16384)); };
@@ -109,27 +125,38 @@ int main(int argc, char** argv) {
     test("outDb", 0.8f, 0.6f, 1000, "0 -> -6 dB output", 5.0); h.setNorm("outDb", 0.8f);
     test("biasDb", 0.5f, 1.0f, 10000, "0 -> +5 dB @10 kHz", 1.0); h.setNorm("biasDb", 0.5f);
     test("postDb", 0.5f, 0.25f, 1000, "post level down", 3.0); h.setNorm("postDb", 0.5f);
-    test("mix", 1.0f, 0.0f, 1000, "wet -> dry (level shift)", 0.3); h.setNorm("mix", 1.0f);
-    {   // speed moves the head bump (50 / 80 / 120 Hz): compare 7.5 vs 30 ips at 50 Hz and 120 Hz
-        h.setNorm("speed", 0.0f); double a50 = level(50), a120 = level(120);
-        h.setNorm("speed", 1.0f); double b50 = level(50), b120 = level(120);
-        h.setNorm("speed", 0.5f);
-        double tilt = (a50 - a120) - (b50 - b120);
-        CHECK(std::abs(tilt) > 0.5, "speed          7.5 vs 30 ips head bump: 50/120 Hz tilt changes by %.2f dB (7.5: %.2f/%.2f, 30: %.2f/%.2f dBFS)", tilt, a50, a120, b50, b120);
+    {   // mix: 0 = exactly dry (latency-aligned), 1 = wet, 0.5 in between
+        h.setNorm("mix", 0.0f); double dry = level(1000, -12); h.setNorm("mix", 0.5f); double half = level(1000, -12); h.setNorm("mix", 1.0f); double wet = level(1000, -12);
+        CHECK(std::abs(dry - (-15.01)) < 0.05 && half < std::max(dry, wet) + 0.1 && half > std::min(dry, wet) - 3.1, "mix            dry %.2f / 50%% %.2f / wet %.2f dBFS", dry, half, wet);
     }
-    test("transformer", 1.0f, 0.0f, 40, "on -> off @40 Hz", 0.3); h.setNorm("transformer", 1.0f);
-    test("tapeType", 0.2f, 0.4f, 1000, "456 -> 499 (level/sat)", 0.1); h.setNorm("tapeType", 0.2f);
+    {   // speed changes the LF contour: 30 ips AES rolls off below 35 Hz, 15 ips NAB holds to 20 Hz [ATR Table 1-4]
+        h.setNorm("speed", 1.0f); double a20 = level(20, -40), a1k = level(1000, -40);
+        h.setNorm("speed", 0.5f); double b20 = level(20, -40), b1k = level(1000, -40);
+        double tilt = (b20 - b1k) - (a20 - a1k);
+        CHECK(tilt > 1.0, "speed          20 Hz re 1 kHz: 30 ips %+.2f dB, 15 ips %+.2f dB (difference %.2f dB)", a20 - a1k, b20 - b1k, tilt);
+    }
+    {   // transformers: level flat, LF THD changes slightly when toggled (tape dominates at 20 Hz, as on the real machine)
+        double lOn = level(20, -18), tOn = thdPct(tail(h.run(20, -18, 1.0), 32768), h.fs, 20);
+        h.setNorm("transformer", 0.0f); double lOff = level(20, -18), tOff = thdPct(tail(h.run(20, -18, 1.0), 32768), h.fs, 20); h.setNorm("transformer", 1.0f);
+        CHECK(std::abs(lOn - lOff) < 0.5 && std::abs(tOn - tOff) > 0.005, "transformer    on/off @20 Hz 0 VU: level %.2f/%.2f dBFS, THD %.3f/%.3f%%", lOn, lOff, tOn, tOff);
+    }
+    {   // tape type: 499 (MOL 1370 nWb/m) is cleaner than 456 (1072) at the same level
+        double t456 = thdPct(tail(h.run(1000, -9, 0.6), 16384), h.fs, 1000); h.setNorm("tapeType", 0.4f); double t499 = thdPct(tail(h.run(1000, -9, 0.6), 16384), h.fs, 1000); h.setNorm("tapeType", 0.2f);
+        CHECK(t499 < t456 * 0.8, "tapeType       456 -> 499 at +9 VU: THD %.2f%% -> %.2f%%", t456, t499);
+    }
     {   // flux = +6 dB drive into the tape with matching repro compensation -> level ~same, THD up
         h.setNorm("flux", 0.33f); double t250 = thdPct(tail(h.run(1000, -20, 0.6), 16384), h.fs, 1000);
         h.setNorm("flux", 1.0f);  double t500 = thdPct(tail(h.run(1000, -20, 0.6), 16384), h.fs, 1000);
         h.setNorm("flux", 0.33f);
         CHECK(t500 > t250 * 1.5, "flux           250 -> 500 nWb/m: THD %.2f%% -> %.2f%% at -20 dBFS", t250, t500);
     }
-    test("eqStd", 0.0f, 1.0f, 10000, "NAB -> IEC @10 kHz", 0.1); h.setNorm("eqStd", 0.0f);
     {
-        h.setNorm("tapeHiss", 1.0f); double hiss = rmsDb(tail(h.run(1000, -200, 1.0, true), 32768)); h.setNorm("tapeHiss", 0.0f);
+        h.setNorm("tapeHiss", 1.0f); double hiss = rmsDb(tail(h.run(1000, -200, 1.0, true), 32768));
+        h.setNorm("eqStd", 1.0f); double hissIec = rmsDb(tail(h.run(1000, -200, 1.0, true), 32768)); h.setNorm("eqStd", 0.0f); h.setNorm("tapeHiss", 0.0f);
         double quiet = rmsDb(tail(h.run(1000, -200, 1.0, true), 32768));
-        CHECK(hiss > -95 && hiss < -70 && quiet < -120, "tapeHiss       on: %.1f dBFS, off: %.1f dBFS", hiss, quiet);
+        // [ATR Table 1-4] 15 ips NAB: 69 dB below 1040 nWb/m -> 0 VU (250 nWb/m) rms is -21 dBFS -> hiss = -21 - 69 + 20log10(1040/250) = -77.6 dBFS
+        CHECK(hiss > -80.6 && hiss < -74.6 && quiet < -120, "tapeHiss       on: %.1f dBFS (spec -77.6), off: %.1f dBFS", hiss, quiet);
+        CHECK(std::abs(hissIec - hiss) > 0.5, "eqStd          NAB -> IEC changes the noise floor: %.1f -> %.1f dBFS (spec 69 vs 70 dB)", hiss, hissIec);
     }
     {
         h.setNorm("wowFlutter", 1.0f); auto w = h.run(1000, -20, 3.0); h.setNorm("wowFlutter", 0.0f);
@@ -144,7 +171,7 @@ int main(int argc, char** argv) {
         h.setNorm("headblock", 0.0f);
         CHECK(rmsR > 1e-6, "headblock      mono: L-only input appears on R (%.1f dBFS)", 10 * std::log10(rmsR / (9 * 512) + 1e-30));
     }
-    test("vibe", 0.0f, 1.0f, 1000, "standard -> VIBE", 0.1); h.setNorm("vibe", 0.0f);
+    test("vibe", 0.0f, 1.0f, 15000, "standard -> VIBE @15 kHz (worn-head spacing loss)", 0.5); h.setNorm("vibe", 0.0f);
 
     printf("== State save/restore ==\n");
     { h.setNorm("inDb", 0.75f); juce::MemoryBlock mb; h.plug->getStateInformation(mb); h.setNorm("inDb", 0.5f); h.plug->setStateInformation(mb.getData(), (int)mb.getSize());

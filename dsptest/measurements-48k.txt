@@ -1,0 +1,62 @@
+fs=48000 latency=4 samples
+
+== small-signal response (dB re input), 456 / 370 nWb/m ==
+  7.5 NAB:    20:+0.01    30:-0.34    40:-0.26    50:-0.14    60:-0.08    80:-0.04   100:-0.02   200:-0.01   500:-0.01  1000:-0.01  2000:-0.01  5000:-0.06 10000:-0.37 12000:-0.69 15000:-1.57 18000:-3.16 20000:-4.81
+  7.5 IEC:    20:+0.01    30:-0.34    40:-0.26    50:-0.14    60:-0.08    80:-0.04   100:-0.02   200:-0.01   500:-0.01  1000:-0.01  2000:-0.01  5000:-0.06 10000:-0.37 12000:-0.69 15000:-1.58 18000:-3.17 20000:-4.82
+   15 NAB:    20:-0.57    30:+0.16    40:+0.09    50:-0.13    60:-0.30    80:-0.23   100:-0.12   200:-0.02   500:-0.01  1000:-0.01  2000:-0.01  5000:-0.02 10000:-0.08 12000:-0.12 15000:-0.24 18000:-0.49 20000:-0.92
+   15 IEC:    20:-0.57    30:+0.16    40:+0.09    50:-0.13    60:-0.30    80:-0.23   100:-0.12   200:-0.02   500:-0.01  1000:-0.01  2000:-0.01  5000:-0.02 10000:-0.08 12000:-0.12 15000:-0.24 18000:-0.49 20000:-0.90
+   30 AES:    20:-3.63    30:-1.37    40:-0.49    50:-0.02    60:+0.19    80:+0.11   100:-0.12   200:-0.12   500:-0.02  1000:-0.01  2000:-0.01  5000:-0.01 10000:-0.04 12000:-0.06 15000:-0.11 18000:-0.24 20000:-0.51
+
+== 1 kHz THD vs level, 456 @ 370 nWb/m = 0 VU = -18 dBFS (sheet: 0.1% @260, 3% @1072 nWb/m => 0.2% @0VU, 3% @+9.2 VU) ==
+  -20.0 VU: out  -0.01 dB re in, THD 0.002%
+  -10.0 VU: out  -0.01 dB re in, THD 0.020%
+   -6.0 VU: out  -0.02 dB re in, THD 0.050%
+   +0.0 VU: out  -0.06 dB re in, THD 0.210%
+   +3.0 VU: out  -0.12 dB re in, THD 0.446%
+   +6.0 VU: out  -0.25 dB re in, THD 1.015%
+   +9.0 VU: out  -0.59 dB re in, THD 2.758%
+  +12.0 VU: out  -1.78 dB re in, THD 9.825%
+  +15.0 VU: out  -4.14 dB re in, THD 20.437%
+
+== all stocks: THD at 0 VU (370) and level for 3% ==
+  406    THD@0VU 0.453%   3% at  +6.6 VU
+  456    THD@0VU 0.210%   3% at  +9.2 VU
+  499    THD@0VU 0.119%   3% at +11.4 VU
+  GP9    THD@0VU 0.118%   3% at +11.6 VU
+  SM900  THD@0VU 0.154%   3% at +12.9 VU
+  SM911  THD@0VU 0.134%   3% at +11.2 VU
+
+== HF saturation (SOL): 10 kHz output vs 1 kHz output at same input level; 456, per speed ==
+   7.5 ips:  -10VU: 1k -0.01 / 10k -0.39 dB   +0VU: 1k -0.06 / 10k -0.57 dB   +6VU: 1k -0.25 / 10k -1.75 dB   +9VU: 1k -0.59 / 10k -3.92 dB
+    15 ips:  -10VU: 1k -0.01 / 10k -0.08 dB   +0VU: 1k -0.06 / 10k -0.11 dB   +6VU: 1k -0.25 / 10k -0.24 dB   +9VU: 1k -0.59 / 10k -0.44 dB
+    30 ips:  -10VU: 1k -0.01 / 10k -0.04 dB   +0VU: 1k -0.06 / 10k -0.12 dB   +6VU: 1k -0.25 / 10k -0.42 dB   +9VU: 1k -0.60 / 10k -1.08 dB
+
+== bias knob, 456 15 ips: level change at 1 kHz / 10 kHz (0 VU) and THD @ 1 kHz ==
+  bias -5.0 dB: 1k -1.01 dB  10k +0.99 dB  THD1k 0.560%
+  bias -3.0 dB: 1k -0.24 dB  10k +1.30 dB  THD1k 0.304%
+  bias -1.0 dB: 1k -0.04 dB  10k +0.63 dB  THD1k 0.227%
+  bias +0.0 dB: 1k -0.06 dB  10k -0.11 dB  THD1k 0.210%
+  bias +1.0 dB: 1k -0.14 dB  10k -1.22 dB  THD1k 0.198%
+  bias +3.0 dB: 1k -0.51 dB  10k -5.06 dB  THD1k 0.178%
+  bias +5.0 dB: 1k -1.28 dB  10k -12.77 dB  THD1k 0.149%
+
+== transformers: 20 Hz THD at +4 dBu(0 VU) and +16/+20 dB over; with vs without ==
+  xfmr=1  +0 VU 20 Hz: THD 2.077%  level -0.84 dB
+  xfmr=1 +12 VU 20 Hz: THD 54.426%  level -7.81 dB
+  xfmr=1 +16 VU 20 Hz: THD 68.937%  level -11.68 dB
+  xfmr=1 +20 VU 20 Hz: THD 77.555%  level -15.63 dB
+  xfmr=0  +0 VU 20 Hz: THD 2.159%  level -0.74 dB
+  xfmr=0 +12 VU 20 Hz: THD 55.072%  level -7.80 dB
+  xfmr=0 +16 VU 20 Hz: THD 69.667%  level -11.67 dB
+  xfmr=0 +20 VU 20 Hz: THD 78.341%  level -15.62 dB
+
+== hiss: output noise (dB re 0 VU) per speed, 456, flux 370 (ATR spec 2-trk: 30ips 72, 15 NAB 69, 7.5 NAB 71 dB below 1040 nWb/m => -63/-60/-62 re 0VU) ==
+   7.5 ips: -62.1 dB re 0 VU
+    15 ips: -60.0 dB re 0 VU
+    30 ips: -63.0 dB re 0 VU
+
+== wow & flutter: 3 kHz tone, instantaneous frequency deviation (rms %) ==
+  raw 0.0440 %, 20-cycle smoothed 0.0392 % (spec NAB rms 0.04 % @15 ips)
+
+== CPU: seconds of audio per second (stereo, this machine) ==
+  10 s processed in 0.520 s → 19.2× real-time

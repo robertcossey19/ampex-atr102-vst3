@@ -1,0 +1,33 @@
+Mar curve (Hs/Hc : M/Ms) Hb=101860
+  0.02 : 0.0004  (slope 0.018)
+  0.05 : 0.0009  (slope 0.018)
+  0.10 : 0.0018  (slope 0.018)
+  0.20 : 0.0036  (slope 0.018)
+  0.30 : 0.0054  (slope 0.018)
+  0.50 : 0.0090  (slope 0.018)
+  0.70 : 0.0126  (slope 0.018)
+  1.00 : 0.0180  (slope 0.018)
+  1.50 : 0.0268  (slope 0.018)
+  2.00 : 0.0355  (slope 0.018)
+  3.00 : 0.0522  (slope 0.017)
+  5.00 : 0.0830  (slope 0.017)
+THD3 vs Hs amplitude:
+  Hs=0.05 Hc : THD3=0.140%  gain=0.0431
+  Hs=0.10 Hc : THD3=0.197%  gain=0.0434
+  Hs=0.15 Hc : THD3=0.212%  gain=0.0435
+  Hs=0.20 Hc : THD3=0.230%  gain=0.0436
+  Hs=0.30 Hc : THD3=0.245%  gain=0.0438
+  Hs=0.40 Hc : THD3=0.211%  gain=0.0439
+  Hs=0.60 Hc : THD3=0.156%  gain=0.0440
+  Hs=0.80 Hc : THD3=0.085%  gain=0.0441
+  Hs=1.00 Hc : THD3=0.007%  gain=0.0440
+LF output vs bias (Hs=0.1Hc):
+  Hb=0.5 Hc : M=0.0075
+  Hb=1.0 Hc : M=0.0046
+  Hb=1.5 Hc : M=0.0035
+  Hb=2.0 Hc : M=0.0029
+  Hb=2.5 Hc : M=0.0025
+  Hb=3.0 Hc : M=0.0022
+  Hb=4.0 Hc : M=0.0018
+  Hb=6.0 Hc : M=0.0013
+  Hb=8.0 Hc : M=0.0011
