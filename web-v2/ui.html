@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANALOGEXACT — Ampex ATR-102</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --alu:#d9d8d2; --alu-2:#c4c3bc; --alu-3:#aeada6; --alu-edge:#8d8c86;
+  --deck:#2a2b2e; --deck-2:#1e1f22; --panel:#121214; --panel-2:#1b1b1e;
+  --ink:#1c1c1c; --ink-soft:#4a4a48; --label:#23231f;
+  --amber:#ffb24a; --amber-glow:rgba(255,178,74,.55); --amber-dim:#5a3f1c;
+  --red:#b9352c; --red-2:#8e2620;
+  --vu-face:#f3a94b; --vu-face-off:#4a3a26;
+  --font:'Switzer','Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0b0c;color:#ddd;font-family:var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#viewport{position:fixed;inset:0;display:grid;place-items:center;background:
+  radial-gradient(1200px 600px at 50% -10%,#1a1b1e 0%,#0b0b0c 70%)}
+#stage{position:relative;width:1152px;height:700px;transform-origin:top left;user-select:none}
+.hidden{display:none !important}
+
+/* ---------- meter bridge ---------- */
+#bridge{position:absolute;left:36px;top:18px;width:1080px;height:184px;border-radius:6px;padding:9px;
+  background:linear-gradient(180deg,#e4e3dd,#cfcec8 60%,#b8b7b0);box-shadow:0 1px 0 #fff6 inset,0 -1px 0 #0003 inset,0 14px 30px #0008,0 2px 4px #0007;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.io{position:relative;border-radius:3px;background:linear-gradient(180deg,#141416,#0f0f11);box-shadow:0 0 0 1px #0a0a0a,0 1px 0 #ffffff33;display:grid;grid-template-columns:232px 1fr;}
+.io .ch{position:absolute;right:10px;bottom:6px;font-size:10px;letter-spacing:.14em;color:#8a8a84;font-weight:600}
+.io .vu{padding:12px 0 0 12px}
+.io .controls{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;padding:14px 10px 8px 4px;gap:0 2px}
+.vu-win{width:208px;height:126px;border-radius:3px;position:relative;overflow:hidden;background:#0a0a0a;box-shadow:0 0 0 1px #000,0 0 0 2px #2d2d2d,inset 0 0 18px #000}
+.vu-win svg{position:absolute;inset:0;width:100%;height:100%}
+.vu-face{fill:var(--vu-face-off);transition:fill .5s}
+.on .vu-face{fill:var(--vu-face)}
+.vu-glow{opacity:0;transition:opacity .6s}
+.on .vu-glow{opacity:1}
+.needle{transform-origin:104px 150px;transition:transform .08s linear}
+.vu-leg{position:absolute;left:12px;top:142px;font-size:9px;letter-spacing:.12em;color:#7a7a74;font-weight:600}
+.vu-leg b{color:#b3b3ac;font-weight:600}
+
+/* knob */
+.ctl{display:grid;justify-items:center;gap:3px;position:relative}
+.ctl .lab{font-size:9.5px;letter-spacing:.14em;color:#c9c9c2;font-weight:600;text-transform:uppercase}
+.ctl .val{font-family:var(--mono);font-size:10px;color:var(--amber);min-height:12px;opacity:.95}
+.knob{width:62px;height:62px;position:relative;cursor:ns-resize;touch-action:none}
+.knob svg{width:100%;height:100%;display:block;overflow:visible}
+.knob .cap{transform-origin:31px 31px}
+.knob.sm{width:46px;height:46px}
+.knob.sm .cap{transform-origin:23px 23px}
+.knob:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:50%}
+
+/* ---------- deck ---------- */
+#deck{position:absolute;left:0;top:212px;width:1152px;height:488px;border-radius:10px 10px 4px 4px;overflow:hidden;
+  background:linear-gradient(180deg,#34353a 0%,#2a2b2e 20%,#232428 100%);box-shadow:0 -1px 0 #ffffff1c inset,0 30px 60px #000c}
+#deck .grain{position:absolute;inset:0;opacity:.18;mix-blend-mode:overlay;pointer-events:none}
+#deck .bar{position:absolute;left:0;right:0;top:0;height:28px;background:linear-gradient(180deg,#3d3e43,#303136);box-shadow:0 1px 0 #0009}
+.plate-lab{position:absolute;font-size:9.5px;letter-spacing:.16em;color:#9c9c96;font-weight:600;text-transform:uppercase}
+
+/* reels */
+.reel{position:absolute;width:264px;height:264px;top:34px}
+.reel svg{width:100%;height:100%;display:block}
+#reelL{left:118px}#reelR{left:770px}
+.pack{transition:r .4s}
+
+/* tape path & headblock */
+#tape-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#head{position:absolute;left:416px;top:330px;width:320px;height:150px}
+#head .block{position:absolute;left:0;top:0;width:320px;height:84px;border-radius:4px;background:linear-gradient(180deg,#1c1c1f,#101012);box-shadow:inset 0 1px 0 #ffffff14,0 6px 14px #0009}
+#head .hd{position:absolute;top:4px;width:34px;height:44px;border-radius:3px 3px 2px 2px;background:linear-gradient(90deg,#4a4b4f,#8a8b8f 48%,#55565a);box-shadow:inset 0 1px 0 #ffffff44,0 2px 3px #000}
+#head .hd:after{content:"";position:absolute;left:15px;right:15px;top:0;bottom:0;background:#c9c9c2;opacity:.5}
+#head .hd span{position:absolute;left:-10px;right:-10px;top:50px;text-align:center;font-size:7.5px;letter-spacing:.14em;color:#8f8f89;font-weight:600}
+#head .base{position:absolute;left:0;top:88px;width:320px;height:62px;border-radius:4px;background:linear-gradient(180deg,#d6d5cf,#bdbcb6 55%,#a9a8a1);box-shadow:0 1px 0 #fff8 inset,0 -2px 0 #0004 inset,0 10px 22px #0009}
+#head .brand{position:absolute;left:14px;top:8px;font-size:8px;letter-spacing:.16em;color:#55554f;font-weight:600;line-height:1.65}
+#head .brand b{display:block;color:#2b2b28;font-weight:700;letter-spacing:.12em}
+#speed{position:absolute;right:10px;top:4px;width:150px;height:54px;z-index:2;display:flex;align-items:center;gap:6px}
+#speed .ticks{position:relative;width:70px;height:54px;font-size:8.5px;letter-spacing:.06em;color:#3a3a36;font-weight:600}
+#speed .ticks span{position:absolute;transform:translate(-50%,-50%)}
+#speed .knob{position:relative;flex:none}
+#speed .lab{font-size:8.5px;letter-spacing:.14em;color:#55554f;font-weight:600;text-transform:uppercase;line-height:1.5}
+#speed .lab b{display:block;font-family:var(--mono);font-size:11px;color:#1c1c1c}
+#pwr{position:absolute;left:10px;top:2px;display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.14em;color:#c9c9c2;font-weight:600}
+#pwr .sw{width:34px;height:16px;border-radius:9px;background:#131315;position:relative;box-shadow:inset 0 1px 3px #000,0 1px 0 #ffffff18;cursor:pointer}
+#pwr .sw:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:linear-gradient(180deg,#e6e6e0,#a8a8a2);transition:left .15s}
+#pwr.on .sw:after{left:20px;background:linear-gradient(180deg,#ffd089,#ff9c1f);box-shadow:0 0 8px var(--amber-glow)}
+#timer{position:absolute;right:10px;top:-2px;display:flex;align-items:center;gap:8px}
+#timer .lab{font-size:9px;letter-spacing:.14em;color:#c9c9c2;font-weight:600}
+#timer .seg{font-family:var(--mono);font-size:15px;font-weight:600;color:#ff9a28;background:#0d0a07;padding:1px 8px;border-radius:3px;box-shadow:inset 0 0 8px #000,0 0 0 1px #000;letter-spacing:.08em;min-width:96px;text-align:center;text-shadow:0 0 8px #ff9a2888}
+.off #timer .seg{color:#4a2e14;text-shadow:none}
+
+/* lower panels (tape + control) */
+.pad{position:absolute;top:306px;width:316px;height:174px;border-radius:5px;padding:8px 12px;
+  background:linear-gradient(180deg,#dcdbd5,#c8c7c1 55%,#b3b2ab);box-shadow:0 1px 0 #fff8 inset,0 -2px 0 #0004 inset,0 12px 26px #000a}
+#tapepad{left:40px}#ctlpad{left:796px}
+.logo{display:inline-block;border:1.5px solid #3a3a36;color:#2b2b28;font-weight:700;font-size:11px;letter-spacing:.18em;padding:2px 7px 1px;border-radius:2px;line-height:1.1}
+.pad .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pad .hdr .sub{font-size:9px;letter-spacing:.14em;color:#4f4f4b;font-weight:600;text-transform:uppercase}
+
+.keys{display:grid;gap:5px 6px;align-items:center}
+.key{display:flex;align-items:center;gap:6px;height:22px;padding:0 6px 0 5px;border-radius:3px;
+  background:linear-gradient(180deg,#f0efe9,#d2d1cb);box-shadow:0 1px 0 #fff inset,0 1px 2px #0007,0 0 0 1px #9b9a93;
+  font-size:9.5px;letter-spacing:.06em;color:var(--label);font-weight:600;text-transform:uppercase;white-space:nowrap}
+.key:active{transform:translateY(1px);box-shadow:0 0 0 1px #8b8a83,0 1px 1px #0005 inset}
+.key .led{width:9px;height:7px;border-radius:1.5px;background:var(--amber-dim);box-shadow:inset 0 0 2px #000;flex:none;transition:background .1s,box-shadow .1s}
+.key.on .led{background:var(--amber);box-shadow:0 0 6px var(--amber-glow),0 0 2px var(--amber)}
+.key.red{background:linear-gradient(180deg,#d9463b,#a52b22);color:#fff;box-shadow:0 1px 0 #ff9a90 inset,0 1px 2px #0008,0 0 0 1px #611812}
+.key.red .led{background:#4a1410}
+.key.red.on .led{background:#ffd7d2;box-shadow:0 0 6px #fff8}
+.key.icon{justify-content:center;font-size:11px;padding:0}
+.row-lab{font-size:8.5px;letter-spacing:.14em;color:#55554f;font-weight:600;text-transform:uppercase;text-align:right;padding-right:4px}
+.disp{font-family:var(--mono);background:#0d0a07;color:#ff9a28;border-radius:3px;padding:5px 8px;box-shadow:inset 0 0 10px #000,0 0 0 1px #000;text-shadow:0 0 8px #ff9a2866;line-height:1.3}
+.disp .l1{font-size:12px;font-weight:600;letter-spacing:.04em;display:flex;justify-content:space-between}
+.disp .l2{font-size:9.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.off .disp{color:#4a2e14;text-shadow:none}
+
+#tapepad .keys{grid-template-columns:repeat(3,1fr)}
+#tapepad .flux{grid-template-columns:repeat(4,1fr);margin-top:5px}
+#ctlpad .matrix{display:grid;grid-template-columns:52px repeat(4,1fr);gap:5px 6px;align-items:center}
+#ctlpad .transport{display:grid;grid-template-columns:52px repeat(4,1fr);gap:5px 6px;margin-top:5px;align-items:center}
+
+/* source + file hint */
+#drop{position:absolute;inset:0;display:none;place-items:center;background:#0008;border:2px dashed var(--amber);border-radius:10px;color:var(--amber);font-size:14px;letter-spacing:.1em;z-index:20}
+#stage.dragging #drop{display:grid}
+#toast{position:absolute;left:50%;top:300px;transform:translateX(-50%);background:#0d0d0e;color:#e8e8e2;font-size:11px;padding:6px 12px;border-radius:4px;box-shadow:0 2px 8px #000a,0 0 0 1px #333;opacity:0;transition:opacity .3s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage" class="off">
+
+  <!-- ================= METER BRIDGE : two I/O modules ================= -->
+  <section id="bridge" aria-label="Input/Output modules">
+    <div class="io" id="io1">
+            <div class="vu">
+        <div class="vu-win" id="vuLwin"></div>
+        <div class="vu-leg"><b>CH 1</b> · 0 VU = <b id="calTxt">−18 dBFS</b></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><span class="lab">Record</span><div class="knob" id="k-in" tabindex="0" role="slider" aria-label="Record (input) level"></div><span class="val" id="v-in">0.0 dB</span></div>
+        <div class="ctl"><span class="lab">Reproduce</span><div class="knob" id="k-out" tabindex="0" role="slider" aria-label="Reproduce (output) level"></div><span class="val" id="v-out">0.0 dB</span></div>
+        <div class="ctl" style="gap:6px">
+          <div class="ctl"><span class="lab">Bias</span><div class="knob sm" id="k-bias" tabindex="0" role="slider" aria-label="Bias"></div><span class="val" id="v-bias">0.0 dB</span></div>
+          <div class="ctl"><span class="lab">Cal</span><div class="knob sm" id="k-cal" tabindex="0" role="slider" aria-label="Calibration (headroom)"></div><span class="val" id="v-cal">0.0 dB</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="io" id="io2">
+            <div class="vu">
+        <div class="vu-win" id="vuRwin"></div>
+        <div class="vu-leg"><b>CH 2</b> · <b id="eqTxt">15 IPS NAB</b> · <b id="fluxTxt">250 nWb/m</b></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><span class="lab">Mix</span><div class="knob" id="k-mix" tabindex="0" role="slider" aria-label="Mix"></div><span class="val" id="v-mix">100 %</span></div>
+        <div class="ctl"><span class="lab">Output</span><div class="knob" id="k-post" tabindex="0" role="slider" aria-label="Output trim"></div><span class="val" id="v-post">0.0 dB</span></div>
+        <div class="ctl" style="gap:6px">
+          <div class="ctl"><span class="lab">Preserve</span><div class="knob sm" id="k-pres" tabindex="0" role="slider" aria-label="Preserve original character"></div><span class="val" id="v-pres">0 %</span></div>
+          <div class="ctl"><span class="lab">Source</span><div class="disp" id="srcDisp" style="font-size:10px;padding:3px 7px;min-width:52px;text-align:center">—</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TRANSPORT DECK ================= -->
+  <section id="deck" aria-label="Transport">
+    <svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+    <div class="bar">
+      <div id="pwr"><span>Power</span><div class="sw" id="pwrSw" role="switch" aria-checked="false" tabindex="0"></div><span id="pwrTxt" style="color:#8a8a84">OFF</span></div>
+      <span class="plate-lab" style="left:50%;top:9px;transform:translateX(-50%)">Ampex ATR-102 <span style="color:#6d6d67">·</span> ½ in. 2-track mastering recorder</span>
+      <div id="timer"><span class="lab">Tape timer</span><span class="seg" id="segTime">00:00:00</span></div>
+    </div>
+
+    <!-- tape path (drawn under the reels so it emerges from behind the flange) -->
+    <svg id="tape-svg" viewBox="0 0 1152 488" aria-hidden="true">
+      <path id="tapePath" d="" fill="none" stroke="#4a331f" stroke-width="6" stroke-linejoin="round"/>
+      <path id="tapePathHi" d="" fill="none" stroke="#6b4b2c" stroke-width="1" opacity=".6"/>
+    </svg>
+    <!-- reels -->
+    <div class="reel" id="reelL" aria-hidden="true"></div>
+    <div class="reel" id="reelR" aria-hidden="true"></div>
+
+    <!-- headblock -->
+    <div id="head">
+      <div class="block"></div>
+      <div class="hd" style="left:72px"><span>ERASE</span></div>
+      <div class="hd" style="left:143px"><span>RECORD</span></div>
+      <div class="hd" style="left:214px"><span>REPRO</span></div>
+      <div class="base">
+        <div class="brand"><span id="headTxt"><b>½ IN · 2 TRACK</b>ATR-102 HEADS</span><br><a href="https://github.com/robertcossey19/ampex-atr102-vst3" target="_blank" rel="noopener" style="color:#55554f;text-decoration:none">ANALOGEXACT V2</a></div>
+        <div id="speed" title="Tape speed">
+          <div class="ticks"><span style="left:6px;top:47px">7½</span><span style="left:35px;top:5px">15</span><span style="left:64px;top:47px">30</span><div class="knob sm" id="k-speed" tabindex="0" role="slider" aria-label="Tape speed" style="position:absolute;left:12px;top:6px"></div></div>
+          <div class="lab">Speed<b id="speedTxt">15 ips</b></div>
+        </div>
+      </div>
+    </div>
+
+    <svg id="tape-top" viewBox="0 0 1152 488" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+      <g fill="#cfcec8" stroke="#6a6a64"><circle cx="396" cy="354" r="10"/><circle cx="756" cy="354" r="10"/><circle cx="452" cy="350" r="6"/><circle cx="700" cy="350" r="6"/></g>
+      <g fill="#333"><circle cx="396" cy="354" r="3.5"/><circle cx="756" cy="354" r="3.5"/><circle cx="452" cy="350" r="2"/><circle cx="700" cy="350" r="2"/></g>
+      <path id="tapePathTop" d="" fill="none" stroke="#4a331f" stroke-width="6" stroke-linejoin="round"/><path id="tapePathTopHi" d="" fill="none" stroke="#8a6238" stroke-width="1" opacity=".7"/>
+    </svg>
+
+    <!-- tape selection panel -->
+    <div class="pad" id="tapepad" aria-label="Tape stock">
+      <div class="hdr"><span class="logo">AMPEX</span><span class="sub">Tape stock · fluxivity</span></div>
+      <div class="disp" id="tapeDisp"><div class="l1"><span id="tdName">456</span><span id="tdFlux">250 nWb/m</span></div><div class="l2" id="tdSpec">MOL +12.6 VU · THD 0.09 % · S/N 73 dB</div></div>
+      <div class="keys" id="tapeKeys" style="margin-top:8px"></div>
+      <div class="keys flux" id="fluxKeys"></div>
+    </div>
+
+    <!-- control panel -->
+    <div class="pad" id="ctlpad" aria-label="Control panel">
+      <div class="hdr"><span class="logo">AMPEX</span><span class="sub">Control unit</span></div>
+      <div class="matrix" id="matrix"></div>
+      <div class="transport" id="transport"></div>
+    </div>
+
+    <div id="drop">DROP AUDIO FILE</div>
+  </section>
+
+  <div id="toast"></div>
+</div>
+</div>
+<input type="file" id="file" accept="audio/*" class="hidden">
+</body>
+</html>

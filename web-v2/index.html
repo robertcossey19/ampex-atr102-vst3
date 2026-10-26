@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANALOGEXACT — Ampex ATR-102</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --alu:#d9d8d2; --alu-2:#c4c3bc; --alu-3:#aeada6; --alu-edge:#8d8c86;
+  --deck:#2a2b2e; --deck-2:#1e1f22; --panel:#121214; --panel-2:#1b1b1e;
+  --ink:#1c1c1c; --ink-soft:#4a4a48; --label:#23231f;
+  --amber:#ffb24a; --amber-glow:rgba(255,178,74,.55); --amber-dim:#5a3f1c;
+  --red:#b9352c; --red-2:#8e2620;
+  --vu-face:#f3a94b; --vu-face-off:#4a3a26;
+  --font:'Switzer','Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0b0c;color:#ddd;font-family:var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#viewport{position:fixed;inset:0;display:grid;place-items:center;background:
+  radial-gradient(1200px 600px at 50% -10%,#1a1b1e 0%,#0b0b0c 70%)}
+#stage{position:relative;width:1152px;height:700px;transform-origin:top left;user-select:none}
+.hidden{display:none !important}
+
+/* ---------- meter bridge ---------- */
+#bridge{position:absolute;left:36px;top:18px;width:1080px;height:184px;border-radius:6px;padding:9px;
+  background:linear-gradient(180deg,#e4e3dd,#cfcec8 60%,#b8b7b0);box-shadow:0 1px 0 #fff6 inset,0 -1px 0 #0003 inset,0 14px 30px #0008,0 2px 4px #0007;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.io{position:relative;border-radius:3px;background:linear-gradient(180deg,#141416,#0f0f11);box-shadow:0 0 0 1px #0a0a0a,0 1px 0 #ffffff33;display:grid;grid-template-columns:232px 1fr;}
+.io .ch{position:absolute;right:10px;bottom:6px;font-size:10px;letter-spacing:.14em;color:#8a8a84;font-weight:600}
+.io .vu{padding:12px 0 0 12px}
+.io .controls{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;padding:14px 10px 8px 4px;gap:0 2px}
+.vu-win{width:208px;height:126px;border-radius:3px;position:relative;overflow:hidden;background:#0a0a0a;box-shadow:0 0 0 1px #000,0 0 0 2px #2d2d2d,inset 0 0 18px #000}
+.vu-win svg{position:absolute;inset:0;width:100%;height:100%}
+.vu-face{fill:var(--vu-face-off);transition:fill .5s}
+.on .vu-face{fill:var(--vu-face)}
+.vu-glow{opacity:0;transition:opacity .6s}
+.on .vu-glow{opacity:1}
+.needle{transform-origin:104px 150px;transition:transform .08s linear}
+.vu-leg{position:absolute;left:12px;top:142px;font-size:9px;letter-spacing:.12em;color:#7a7a74;font-weight:600}
+.vu-leg b{color:#b3b3ac;font-weight:600}
+
+/* knob */
+.ctl{display:grid;justify-items:center;gap:3px;position:relative}
+.ctl .lab{font-size:9.5px;letter-spacing:.14em;color:#c9c9c2;font-weight:600;text-transform:uppercase}
+.ctl .val{font-family:var(--mono);font-size:10px;color:var(--amber);min-height:12px;opacity:.95}
+.knob{width:62px;height:62px;position:relative;cursor:ns-resize;touch-action:none}
+.knob svg{width:100%;height:100%;display:block;overflow:visible}
+.knob .cap{transform-origin:31px 31px}
+.knob.sm{width:46px;height:46px}
+.knob.sm .cap{transform-origin:23px 23px}
+.knob:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:50%}
+
+/* ---------- deck ---------- */
+#deck{position:absolute;left:0;top:212px;width:1152px;height:488px;border-radius:10px 10px 4px 4px;overflow:hidden;
+  background:linear-gradient(180deg,#34353a 0%,#2a2b2e 20%,#232428 100%);box-shadow:0 -1px 0 #ffffff1c inset,0 30px 60px #000c}
+#deck .grain{position:absolute;inset:0;opacity:.18;mix-blend-mode:overlay;pointer-events:none}
+#deck .bar{position:absolute;left:0;right:0;top:0;height:28px;background:linear-gradient(180deg,#3d3e43,#303136);box-shadow:0 1px 0 #0009}
+.plate-lab{position:absolute;font-size:9.5px;letter-spacing:.16em;color:#9c9c96;font-weight:600;text-transform:uppercase}
+
+/* reels */
+.reel{position:absolute;width:264px;height:264px;top:34px}
+.reel svg{width:100%;height:100%;display:block}
+#reelL{left:118px}#reelR{left:770px}
+.pack{transition:r .4s}
+
+/* tape path & headblock */
+#tape-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#head{position:absolute;left:416px;top:330px;width:320px;height:150px}
+#head .block{position:absolute;left:0;top:0;width:320px;height:84px;border-radius:4px;background:linear-gradient(180deg,#1c1c1f,#101012);box-shadow:inset 0 1px 0 #ffffff14,0 6px 14px #0009}
+#head .hd{position:absolute;top:4px;width:34px;height:44px;border-radius:3px 3px 2px 2px;background:linear-gradient(90deg,#4a4b4f,#8a8b8f 48%,#55565a);box-shadow:inset 0 1px 0 #ffffff44,0 2px 3px #000}
+#head .hd:after{content:"";position:absolute;left:15px;right:15px;top:0;bottom:0;background:#c9c9c2;opacity:.5}
+#head .hd span{position:absolute;left:-10px;right:-10px;top:50px;text-align:center;font-size:7.5px;letter-spacing:.14em;color:#8f8f89;font-weight:600}
+#head .base{position:absolute;left:0;top:88px;width:320px;height:62px;border-radius:4px;background:linear-gradient(180deg,#d6d5cf,#bdbcb6 55%,#a9a8a1);box-shadow:0 1px 0 #fff8 inset,0 -2px 0 #0004 inset,0 10px 22px #0009}
+#head .brand{position:absolute;left:14px;top:8px;font-size:8px;letter-spacing:.16em;color:#55554f;font-weight:600;line-height:1.65}
+#head .brand b{display:block;color:#2b2b28;font-weight:700;letter-spacing:.12em}
+#speed{position:absolute;right:10px;top:4px;width:150px;height:54px;z-index:2;display:flex;align-items:center;gap:6px}
+#speed .ticks{position:relative;width:70px;height:54px;font-size:8.5px;letter-spacing:.06em;color:#3a3a36;font-weight:600}
+#speed .ticks span{position:absolute;transform:translate(-50%,-50%)}
+#speed .knob{position:relative;flex:none}
+#speed .lab{font-size:8.5px;letter-spacing:.14em;color:#55554f;font-weight:600;text-transform:uppercase;line-height:1.5}
+#speed .lab b{display:block;font-family:var(--mono);font-size:11px;color:#1c1c1c}
+#pwr{position:absolute;left:10px;top:2px;display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.14em;color:#c9c9c2;font-weight:600}
+#pwr .sw{width:34px;height:16px;border-radius:9px;background:#131315;position:relative;box-shadow:inset 0 1px 3px #000,0 1px 0 #ffffff18;cursor:pointer}
+#pwr .sw:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:linear-gradient(180deg,#e6e6e0,#a8a8a2);transition:left .15s}
+#pwr.on .sw:after{left:20px;background:linear-gradient(180deg,#ffd089,#ff9c1f);box-shadow:0 0 8px var(--amber-glow)}
+#timer{position:absolute;right:10px;top:-2px;display:flex;align-items:center;gap:8px}
+#timer .lab{font-size:9px;letter-spacing:.14em;color:#c9c9c2;font-weight:600}
+#timer .seg{font-family:var(--mono);font-size:15px;font-weight:600;color:#ff9a28;background:#0d0a07;padding:1px 8px;border-radius:3px;box-shadow:inset 0 0 8px #000,0 0 0 1px #000;letter-spacing:.08em;min-width:96px;text-align:center;text-shadow:0 0 8px #ff9a2888}
+.off #timer .seg{color:#4a2e14;text-shadow:none}
+
+/* lower panels (tape + control) */
+.pad{position:absolute;top:306px;width:316px;height:174px;border-radius:5px;padding:8px 12px;
+  background:linear-gradient(180deg,#dcdbd5,#c8c7c1 55%,#b3b2ab);box-shadow:0 1px 0 #fff8 inset,0 -2px 0 #0004 inset,0 12px 26px #000a}
+#tapepad{left:40px}#ctlpad{left:796px}
+.logo{display:inline-block;border:1.5px solid #3a3a36;color:#2b2b28;font-weight:700;font-size:11px;letter-spacing:.18em;padding:2px 7px 1px;border-radius:2px;line-height:1.1}
+.pad .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pad .hdr .sub{font-size:9px;letter-spacing:.14em;color:#4f4f4b;font-weight:600;text-transform:uppercase}
+
+.keys{display:grid;gap:5px 6px;align-items:center}
+.key{display:flex;align-items:center;gap:6px;height:22px;padding:0 6px 0 5px;border-radius:3px;
+  background:linear-gradient(180deg,#f0efe9,#d2d1cb);box-shadow:0 1px 0 #fff inset,0 1px 2px #0007,0 0 0 1px #9b9a93;
+  font-size:9.5px;letter-spacing:.06em;color:var(--label);font-weight:600;text-transform:uppercase;white-space:nowrap}
+.key:active{transform:translateY(1px);box-shadow:0 0 0 1px #8b8a83,0 1px 1px #0005 inset}
+.key .led{width:9px;height:7px;border-radius:1.5px;background:var(--amber-dim);box-shadow:inset 0 0 2px #000;flex:none;transition:background .1s,box-shadow .1s}
+.key.on .led{background:var(--amber);box-shadow:0 0 6px var(--amber-glow),0 0 2px var(--amber)}
+.key.red{background:linear-gradient(180deg,#d9463b,#a52b22);color:#fff;box-shadow:0 1px 0 #ff9a90 inset,0 1px 2px #0008,0 0 0 1px #611812}
+.key.red .led{background:#4a1410}
+.key.red.on .led{background:#ffd7d2;box-shadow:0 0 6px #fff8}
+.key.icon{justify-content:center;font-size:11px;padding:0}
+.row-lab{font-size:8.5px;letter-spacing:.14em;color:#55554f;font-weight:600;text-transform:uppercase;text-align:right;padding-right:4px}
+.disp{font-family:var(--mono);background:#0d0a07;color:#ff9a28;border-radius:3px;padding:5px 8px;box-shadow:inset 0 0 10px #000,0 0 0 1px #000;text-shadow:0 0 8px #ff9a2866;line-height:1.3}
+.disp .l1{font-size:12px;font-weight:600;letter-spacing:.04em;display:flex;justify-content:space-between}
+.disp .l2{font-size:9.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.off .disp{color:#4a2e14;text-shadow:none}
+
+#tapepad .keys{grid-template-columns:repeat(3,1fr)}
+#tapepad .flux{grid-template-columns:repeat(4,1fr);margin-top:5px}
+#ctlpad .matrix{display:grid;grid-template-columns:52px repeat(4,1fr);gap:5px 6px;align-items:center}
+#ctlpad .transport{display:grid;grid-template-columns:52px repeat(4,1fr);gap:5px 6px;margin-top:5px;align-items:center}
+
+/* source + file hint */
+#drop{position:absolute;inset:0;display:none;place-items:center;background:#0008;border:2px dashed var(--amber);border-radius:10px;color:var(--amber);font-size:14px;letter-spacing:.1em;z-index:20}
+#stage.dragging #drop{display:grid}
+#toast{position:absolute;left:50%;top:300px;transform:translateX(-50%);background:#0d0d0e;color:#e8e8e2;font-size:11px;padding:6px 12px;border-radius:4px;box-shadow:0 2px 8px #000a,0 0 0 1px #333;opacity:0;transition:opacity .3s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage" class="off">
+
+  <!-- ================= METER BRIDGE : two I/O modules ================= -->
+  <section id="bridge" aria-label="Input/Output modules">
+    <div class="io" id="io1">
+            <div class="vu">
+        <div class="vu-win" id="vuLwin"></div>
+        <div class="vu-leg"><b>CH 1</b> · 0 VU = <b id="calTxt">−18 dBFS</b></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><span class="lab">Record</span><div class="knob" id="k-in" tabindex="0" role="slider" aria-label="Record (input) level"></div><span class="val" id="v-in">0.0 dB</span></div>
+        <div class="ctl"><span class="lab">Reproduce</span><div class="knob" id="k-out" tabindex="0" role="slider" aria-label="Reproduce (output) level"></div><span class="val" id="v-out">0.0 dB</span></div>
+        <div class="ctl" style="gap:6px">
+          <div class="ctl"><span class="lab">Bias</span><div class="knob sm" id="k-bias" tabindex="0" role="slider" aria-label="Bias"></div><span class="val" id="v-bias">0.0 dB</span></div>
+          <div class="ctl"><span class="lab">Cal</span><div class="knob sm" id="k-cal" tabindex="0" role="slider" aria-label="Calibration (headroom)"></div><span class="val" id="v-cal">0.0 dB</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="io" id="io2">
+            <div class="vu">
+        <div class="vu-win" id="vuRwin"></div>
+        <div class="vu-leg"><b>CH 2</b> · <b id="eqTxt">15 IPS NAB</b> · <b id="fluxTxt">250 nWb/m</b></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><span class="lab">Mix</span><div class="knob" id="k-mix" tabindex="0" role="slider" aria-label="Mix"></div><span class="val" id="v-mix">100 %</span></div>
+        <div class="ctl"><span class="lab">Output</span><div class="knob" id="k-post" tabindex="0" role="slider" aria-label="Output trim"></div><span class="val" id="v-post">0.0 dB</span></div>
+        <div class="ctl" style="gap:6px">
+          <div class="ctl"><span class="lab">Preserve</span><div class="knob sm" id="k-pres" tabindex="0" role="slider" aria-label="Preserve original character"></div><span class="val" id="v-pres">0 %</span></div>
+          <div class="ctl"><span class="lab">Source</span><div class="disp" id="srcDisp" style="font-size:10px;padding:3px 7px;min-width:52px;text-align:center">—</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TRANSPORT DECK ================= -->
+  <section id="deck" aria-label="Transport">
+    <svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+    <div class="bar">
+      <div id="pwr"><span>Power</span><div class="sw" id="pwrSw" role="switch" aria-checked="false" tabindex="0"></div><span id="pwrTxt" style="color:#8a8a84">OFF</span></div>
+      <span class="plate-lab" style="left:50%;top:9px;transform:translateX(-50%)">Ampex ATR-102 <span style="color:#6d6d67">·</span> ½ in. 2-track mastering recorder</span>
+      <div id="timer"><span class="lab">Tape timer</span><span class="seg" id="segTime">00:00:00</span></div>
+    </div>
+
+    <!-- tape path (drawn under the reels so it emerges from behind the flange) -->
+    <svg id="tape-svg" viewBox="0 0 1152 488" aria-hidden="true">
+      <path id="tapePath" d="" fill="none" stroke="#4a331f" stroke-width="6" stroke-linejoin="round"/>
+      <path id="tapePathHi" d="" fill="none" stroke="#6b4b2c" stroke-width="1" opacity=".6"/>
+    </svg>
+    <!-- reels -->
+    <div class="reel" id="reelL" aria-hidden="true"></div>
+    <div class="reel" id="reelR" aria-hidden="true"></div>
+
+    <!-- headblock -->
+    <div id="head">
+      <div class="block"></div>
+      <div class="hd" style="left:72px"><span>ERASE</span></div>
+      <div class="hd" style="left:143px"><span>RECORD</span></div>
+      <div class="hd" style="left:214px"><span>REPRO</span></div>
+      <div class="base">
+        <div class="brand"><span id="headTxt"><b>½ IN · 2 TRACK</b>ATR-102 HEADS</span><br><a href="https://github.com/robertcossey19/ampex-atr102-vst3" target="_blank" rel="noopener" style="color:#55554f;text-decoration:none">ANALOGEXACT V2</a></div>
+        <div id="speed" title="Tape speed">
+          <div class="ticks"><span style="left:6px;top:47px">7½</span><span style="left:35px;top:5px">15</span><span style="left:64px;top:47px">30</span><div class="knob sm" id="k-speed" tabindex="0" role="slider" aria-label="Tape speed" style="position:absolute;left:12px;top:6px"></div></div>
+          <div class="lab">Speed<b id="speedTxt">15 ips</b></div>
+        </div>
+      </div>
+    </div>
+
+    <svg id="tape-top" viewBox="0 0 1152 488" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+      <g fill="#cfcec8" stroke="#6a6a64"><circle cx="396" cy="354" r="10"/><circle cx="756" cy="354" r="10"/><circle cx="452" cy="350" r="6"/><circle cx="700" cy="350" r="6"/></g>
+      <g fill="#333"><circle cx="396" cy="354" r="3.5"/><circle cx="756" cy="354" r="3.5"/><circle cx="452" cy="350" r="2"/><circle cx="700" cy="350" r="2"/></g>
+      <path id="tapePathTop" d="" fill="none" stroke="#4a331f" stroke-width="6" stroke-linejoin="round"/><path id="tapePathTopHi" d="" fill="none" stroke="#8a6238" stroke-width="1" opacity=".7"/>
+    </svg>
+
+    <!-- tape selection panel -->
+    <div class="pad" id="tapepad" aria-label="Tape stock">
+      <div class="hdr"><span class="logo">AMPEX</span><span class="sub">Tape stock · fluxivity</span></div>
+      <div class="disp" id="tapeDisp"><div class="l1"><span id="tdName">456</span><span id="tdFlux">250 nWb/m</span></div><div class="l2" id="tdSpec">MOL +12.6 VU · THD 0.09 % · S/N 73 dB</div></div>
+      <div class="keys" id="tapeKeys" style="margin-top:8px"></div>
+      <div class="keys flux" id="fluxKeys"></div>
+    </div>
+
+    <!-- control panel -->
+    <div class="pad" id="ctlpad" aria-label="Control panel">
+      <div class="hdr"><span class="logo">AMPEX</span><span class="sub">Control unit</span></div>
+      <div class="matrix" id="matrix"></div>
+      <div class="transport" id="transport"></div>
+    </div>
+
+    <div id="drop">DROP AUDIO FILE</div>
+  </section>
+
+  <div id="toast"></div>
+</div>
+</div>
+<input type="file" id="file" accept="audio/*" class="hidden">
+
+<script id="ampex-core">
+/* ===================================================================================
+   ANALOGEXACT — Ampex ATR-102 physics core (browser port of Source/TapeDSP.h, v2)
+   Runs identically on the main thread (filter design) and inside the AudioWorklet
+   (sample processing).  Levels inside the model: 1.0 = 0 VU = <flux> nWb/m on tape.
+   Sources: Ampex ATR-100 manual 4890407-01 (Tables 1-4, 5-5, 5-11; schematic 4840421),
+   Quantegy 406/456/499/GP9 and EMTEC SM900/SM911 sheets, Wallace 1951, Bertram/Mallinson.
+   =================================================================================== */
+const AmpexCore = (() => {
+  'use strict';
+  const PI = Math.PI, MU0 = 1.25663706212e-6;
+  const dB2lin = db => Math.pow(10, db / 20), lin2dB = g => 20 * Math.log10(Math.max(g, 1e-30));
+  // erf — Abramowitz & Stegun 7.1.26 refined with one Newton step on erfc series (|err| < 1e-9 in-band)
+  function erf(x) {
+    const s = x < 0 ? -1 : 1; x = Math.abs(x);
+    if (x > 6) return s;
+    const t = 1 / (1 + 0.5 * x);
+    // Numerical Recipes erfc Chebyshev fit (fractional error < 1.2e-7)
+    const y = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+    return s * (1 - y);
+  }
+
+  // ---------------- tape stocks  {name, Hc A/m, Br T, coating µm, ref nWb/m, THD% @ref, MOL nWb/m, ΔS10 dB, noise re 456}
+  const TAPES = [
+    { name: '406',   Hc: 26260, Br: 0.130, coat: 10.1, ref: 260, thd: 0.20, mol: 810,  dS10: 1.75, noise: +1.0, cal: { kappa: 2.90, drive: 63.833380, sens: 0.00831621 } },
+    { name: '456',   Hc: 25465, Br: 0.150, coat: 12.7, ref: 260, thd: 0.10, mol: 1072, dS10: 2.75, noise:  0.0, cal: { kappa: 3.75, drive: 58.194695, sens: 0.00922435 } },
+    { name: '499',   Hc: 31035, Br: 0.160, coat: 15.2, ref: 260, thd: 0.06, mol: 1370, dS10: 3.0,  noise: -2.0, cal: { kappa: 3.85, drive: 56.784262, sens: 0.0110158 } },
+    { name: 'GP9',   Hc: 27850, Br: 0.165, coat: 16.0, ref: 260, thd: 0.06, mol: 1387, dS10: 3.0,  noise: -2.5, cal: { kappa: 3.65, drive: 48.050360, sens: 0.0108866 } },
+    { name: 'SM900', Hc: 29443, Br: 0.154, coat: 14.0, ref: 320, thd: 0.12, mol: 1604, dS10: 4.0,  noise: -1.5, cal: { kappa: 0.20, drive: 9.694703,  sens: 0.0183715 } },
+    { name: 'SM911', Hc: 25465, Br: 0.145, coat: 13.0, ref: 320, thd: 0.10, mol: 1350, dS10: 3.0,  noise:  0.0, cal: { kappa: 3.40, drive: 42.465356, sens: 0.0121675 } },
+  ];
+  const SPEEDS = [7.5, 15, 30];
+  const FLUX = [185, 250, 370, 500];
+  const eqFor = (sp, eq) => sp === 2 ? { hf: 17.5, lf: 0, name: 'AES' } : eq === 0 ? { hf: 50, lf: 3180, name: 'NAB' } : { hf: sp === 1 ? 35 : 70, lf: 0, name: 'IEC' };
+  const REPRO_GAP = 2.5, SPACING = 0.30, SPACING_WORN = 1.0;
+  const sfdFor = t => (t === 0 || t === 1 || t === 5) ? 0.35 : 0.25;
+
+  // ---------------- wavelength losses [Wallace]
+  class LossModel {
+    constructor() { this.v = 0.381; this.spacing = SPACING; this.coat = 12.7; this.gap = REPRO_GAP; this.zone = 2.09; }
+    clone() { const l = new LossModel(); Object.assign(l, this); return l; }
+    lambda(f) { return this.v / Math.max(f, 1e-3) * 1e6; }
+    playback(f) {
+      const lam = this.lambda(f), k = 2 * PI / lam;
+      const sp = Math.exp(-k * this.spacing), x = k * this.coat, th = (1 - Math.exp(-x)) / x;
+      const a = PI * this.gap / lam, gp = Math.abs(a < 1e-9 ? 1 : Math.sin(a) / a);
+      return sp * th * gp;
+    }
+    recordZone(f) { return Math.exp(-2 * PI * this.zone / this.lambda(f)); }
+    total(f) { return this.playback(f) * this.recordZone(f); }
+  }
+
+  // ---------------- FFT (radix-2, in place, split re/im)
+  function fft(re, im, inverse) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit;
+      if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = 2 * PI / len * (inverse ? 1 : -1), wr = Math.cos(ang), wi = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cr = 1, ci = 0;
+        for (let j = 0; j < len / 2; j++) {
+          const a = i + j, b = a + len / 2;
+          const tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+          const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+        }
+      }
+    }
+    if (inverse) for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
+  }
+  // minimum-phase FIR from a magnitude function (real-cepstrum method), 8192-point
+  function designMinPhase(magFn, fs, taps, order = 13) {
+    const N = 1 << order, re = new Float64Array(N), im = new Float64Array(N);
+    for (let k = 0; k < N; k++) { const kk = k <= N / 2 ? k : N - k; re[k] = Math.log(Math.max(magFn(kk * fs / N), 1e-5)); }
+    fft(re, im, true);
+    for (let n = 0; n < N; n++) { const w = (n === 0 || n === N / 2) ? 1 : (n < N / 2 ? 2 : 0); re[n] *= w; im[n] = 0; }
+    fft(re, im, false);
+    for (let k = 0; k < N; k++) { const m = Math.exp(re[k]); re[k] = m * Math.cos(im[k]); im[k] = m * Math.sin(im[k]); }
+    fft(re, im, true);
+    const h = new Float32Array(taps), fade = taps >> 2;
+    for (let n = 0; n < taps; n++) { let w = 1; if (n >= taps - fade) { const t = (n - (taps - fade)) / fade; w = 0.5 + 0.5 * Math.cos(PI * t); } h[n] = re[n] * w; }
+    return h;
+  }
+  class FIR {
+    constructor() { this.h = new Float32Array(0); this.z = new Float32Array(0); this.pos = 0; }
+    set(h) { if (h.length !== this.h.length) { this.z = new Float32Array(h.length * 2); this.pos = 0; } this.h = h; }
+    reset() { this.z.fill(0); this.pos = 0; }
+    process(x) {
+      const n = this.h.length; if (!n) return x;
+      const z = this.z, h = this.h; z[this.pos] = x; z[this.pos + n] = x;
+      let acc = 0; const base = this.pos + 1;
+      for (let i = 0; i < n; i++) acc += h[n - 1 - i] * z[base + i];
+      if (++this.pos >= n) this.pos = 0;
+      return acc;
+    }
+    magnitudeAt(f, fs) { let r = 0, i = 0; for (let n = 0; n < this.h.length; n++) { const a = -2 * PI * f * n / fs; r += this.h[n] * Math.cos(a); i += this.h[n] * Math.sin(a); } return Math.hypot(r, i); }
+  }
+
+  // ---------------- biquad (TDF2, double)
+  class Biquad {
+    constructor() { this.b0 = 1; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.s1 = 0; this.s2 = 0; }
+    reset() { this.s1 = this.s2 = 0; }
+    process(x) { const y = this.b0 * x + this.s1; this.s1 = this.b1 * x - this.a1 * y + this.s2; this.s2 = this.b2 * x - this.a2 * y; return y; }
+    identity() { this.b0 = 1; this.b1 = this.b2 = this.a1 = this.a2 = 0; return this; }
+    coefs() { return [this.b0, this.b1, this.b2, this.a1, this.a2]; }
+    setCoefs(c) { [this.b0, this.b1, this.b2, this.a1, this.a2] = c; return this; }
+    fromAnalog(B0, B1, B2, A0, A1, A2, fs, fcWarp) {
+      const K = fcWarp > 0 ? (2 * PI * fcWarp) / Math.tan(PI * fcWarp / fs) : 2 * fs, k2 = K * K;
+      const a0 = A0 + A1 * K + A2 * k2;
+      this.b0 = (B0 + B1 * K + B2 * k2) / a0; this.b1 = (2 * B0 - 2 * B2 * k2) / a0; this.b2 = (B0 - B1 * K + B2 * k2) / a0;
+      this.a1 = (2 * A0 - 2 * A2 * k2) / a0; this.a2 = (A0 - A1 * K + A2 * k2) / a0; return this;
+    }
+    lowpass(fc, Q, fs) { const w = 2 * PI * fc; return this.fromAnalog(w * w, 0, 0, w * w, w / Q, 1, fs, fc); }
+    highpass(fc, Q, fs) { const w = 2 * PI * fc; return this.fromAnalog(0, 0, 1, w * w, w / Q, 1, fs, fc); }
+    peak(fc, Q, gDb, fs) { const A = Math.pow(10, gDb / 40), w = 2 * PI * fc; return this.fromAnalog(w * w, w * A / Q, 1, w * w, w / (A * Q), 1, fs, fc); }
+    shelf1(tauZ, tauP, fs, gain = 1, fwarp = 0) {
+      const fw = fwarp > 0 ? fwarp : 1 / (2 * PI * Math.max(Math.max(tauZ > 0 ? tauZ : 1e9, tauP > 0 ? tauP : 1e9), 1e-7));
+      return this.fromAnalog(gain, gain * tauZ, 0, 1, tauP, 0, fs, Math.min(fw, fs * 0.45));
+    }
+    magnitudeAt(f, fs) {
+      const w = -2 * PI * f / fs, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+      const nr = this.b0 + this.b1 * c1 + this.b2 * c2, ni = this.b1 * s1 + this.b2 * s2;
+      const dr = 1 + this.a1 * c1 + this.a2 * c2, di = this.a1 * s1 + this.a2 * s2;
+      return Math.hypot(nr, ni) / Math.hypot(dr, di);
+    }
+  }
+
+  // ---------------- AC-bias anhysteretic remanence  m = erf((h − κm)/√2), log-normal SFD
+  function anhSolve(h, kappa) {
+    let lo = -1, hi = 1;
+    for (let i = 0; i < 48; i++) { const mid = 0.5 * (lo + hi); const f = mid - erf((h - kappa * mid) / Math.SQRT2); if (f > 0) hi = mid; else lo = mid; }
+    return 0.5 * (lo + hi);
+  }
+  function buildAnhTable(ts, tapeIdx, kappa, biasDb, HmaxSigma = 24, N = 769) {
+    const Mr = ts.Br / MU0, Hc = ts.Hc, sigma = 0.5 * Hc, sfd = sfdFor(tapeIdx);
+    const Hb = Hc * Math.exp(2 * sfd) * dB2lin(biasDb);
+    const z = Math.log(Math.max(Hb, 1e-9) / Hc) / sfd, part = 0.5 * (1 + erf(z / Math.SQRT2));
+    const MrEff = Mr * part, kEff = kappa * part, Hmax = HmaxSigma * sigma;
+    const m = new Float32Array(N);
+    for (let i = 0; i < N; i++) m[i] = MrEff * anhSolve((Hmax * i / (N - 1)) / sigma, kEff);
+    m[0] = 0;
+    return { Hmax, m };
+  }
+  function anhLookup(t, H) {
+    const N = t.m.length, s = H < 0 ? -1 : 1; const x = Math.abs(H) / t.Hmax * (N - 1);
+    if (x >= N - 1) return s * t.m[N - 1];
+    const i = x | 0, f = x - i; return s * ((1 - f) * t.m[i] + f * t.m[i + 1]);
+  }
+
+  // ---------------- transformer: flux-domain core law, implicit trapezoid + Newton
+  class Transformer {
+    constructor() { this.fs = 48000; this.fL = 8; this.phiSat = 1; this.kappa = 1; this.fb = 1; this.phi = 0; this.prev = 0; this.hf = new Biquad(); }
+    prepare(fs, fL, level1pct20Hz, nfbDb, hfRes, hfQ) {
+      this.fs = fs; this.fL = fL; this.fb = 1 / dB2lin(nfbDb);
+      const phiA = level1pct20Hz / (2 * PI * 20), lfDiv = fL / 20; this.kappa = 1;
+      this.phiSat = phiA / Math.sqrt(0.01 * 4 / Math.max(lfDiv * this.kappa * this.fb, 1e-9));
+      if (hfRes < 0.45 * fs) this.hf.lowpass(hfRes, hfQ, fs); else this.hf.identity();
+      this.reset();
+    }
+    setFrom(o) { this.fs = o.fs; this.fL = o.fL; this.phiSat = o.phiSat; this.kappa = o.kappa; this.fb = o.fb; this.hf.setCoefs(o.hf); }
+    export() { return { fs: this.fs, fL: this.fL, phiSat: this.phiSat, kappa: this.kappa, fb: this.fb, hf: this.hf.coefs() }; }
+    reset() { this.phi = 0; this.prev = 0; this.hf.reset(); }
+    process(vin) {
+      const a = 2 * PI * this.fL * this.fb, h = 1 / this.fs, rhs = this.phi + 0.5 * h * (vin + this.prev), ps = this.phiSat, k = this.kappa;
+      let pn = this.phi;
+      for (let it = 0; it < 4; it++) {
+        const r = pn / ps, r2 = r * r, g = pn * (1 + k * r2), dg = 1 + 3 * k * r2;
+        pn -= (pn - rhs + 0.5 * h * a * g) / (1 + 0.5 * h * a * dg);
+      }
+      const r = pn / ps, vout = vin - a * pn * (1 + k * r * r);
+      this.phi = pn; this.prev = vout;
+      return this.hf.process(vout);
+    }
+  }
+
+  // ---------------- 2× half-band polyphase IIR (Valenzuela–Constantinides), cascaded for 4×
+  const HB_STAGE1 = [0.032701390248, 0.122921927274, 0.250924529315, 0.393848246461, 0.533438203773, 0.659440556758, 0.769175179754, 0.865498072578, 0.954972748445]; // 100 dB, tbw 0.04
+  const HB_STAGE2 = [0.039151597734, 0.147377113601, 0.302646848328, 0.48246854277, 0.674615918547, 0.883005025769];                                              // 90 dB, tbw 0.10
+  class HalfBand {
+    constructor(coefs) {
+      this.a0 = coefs.filter((_, i) => i % 2 === 0); this.a1 = coefs.filter((_, i) => i % 2 === 1);
+      this.x0 = new Float64Array(this.a0.length); this.y0 = new Float64Array(this.a0.length);
+      this.x1 = new Float64Array(this.a1.length); this.y1 = new Float64Array(this.a1.length);
+      this.ux0 = new Float64Array(this.a0.length); this.uy0 = new Float64Array(this.a0.length);
+      this.ux1 = new Float64Array(this.a1.length); this.uy1 = new Float64Array(this.a1.length);
+    }
+    reset() { for (const b of [this.x0, this.y0, this.x1, this.y1, this.ux0, this.uy0, this.ux1, this.uy1]) b.fill(0); }
+    static ap(a, x, xs, ys, i) { const y = a[i] * (x - ys[i]) + xs[i]; xs[i] = x; ys[i] = y; return y; }  // allpass (a + z^-2)/(1 + a z^-2) at the polyphase rate
+    // upsample one input sample → two outputs [even, odd]
+    up(x, out, o) {
+      let p0 = x, p1 = x;
+      for (let i = 0; i < this.a0.length; i++) p0 = HalfBand.ap(this.a0, p0, this.ux0, this.uy0, i);
+      for (let i = 0; i < this.a1.length; i++) p1 = HalfBand.ap(this.a1, p1, this.ux1, this.uy1, i);
+      out[o] = p0; out[o + 1] = p1;   // even output from the direct path, odd from the z⁻¹ path
+    }
+    // downsample two inputs → one output
+    down(x0, x1) {
+      let p0 = x1, p1 = x0;
+      for (let i = 0; i < this.a0.length; i++) p0 = HalfBand.ap(this.a0, p0, this.x0, this.y0, i);
+      for (let i = 0; i < this.a1.length; i++) p1 = HalfBand.ap(this.a1, p1, this.x1, this.y1, i);
+      return 0.5 * (p0 + p1);
+    }
+  }
+
+  // ---------------- one channel of the machine
+  const WF_DEPTH = [0.06, 0.04, 0.03];  // [ATR Table 1-4] NAB rms %
+  class TapeChannel {
+    constructor(fs, maxBlock) {
+      this.fs = fs; this.osFactor = fs <= 50000 ? 4 : 2;
+      this.hb1 = new HalfBand(HB_STAGE1); this.hb2 = new HalfBand(HB_STAGE2);
+      this.pre = new FIR(); this.post = new FIR();
+      this.recLF = new Biquad(); this.recHFpole = new Biquad(); this.recHF = new Biquad();
+      this.repLF = new Biquad(); this.repHF = new Biquad(); this.bump1 = new Biquad(); this.bump2 = new Biquad(); this.bumpHP = new Biquad(); this.noiseLP = new Biquad();
+      this.inX = new Transformer(); this.outX = new Transformer();
+      this.table = { Hmax: 1, m: new Float32Array([0, 0]) };
+      this.drive = 1; this.outScale = 1; this.recTrim = 1; this.repTrim = 1; this.noiseGain = 0; this.transformer = true;
+      this.tmp = new Float64Array(maxBlock * 4 + 8); this.tmp2 = new Float64Array(maxBlock * 2 + 4);
+      this.loss = new LossModel(); this.cfg = null;
+      if (fs >= 88000) this.recHF.lowpass(28000, 0.707, fs); else this.recHF.identity();
+    }
+    latencySamples() { return this.osFactor === 4 ? 6 : 4; }   // measured group delay of the half-band cascade (≈)
+    reset() { this.hb1.reset(); this.hb2.reset(); this.pre.reset(); this.post.reset(); for (const b of [this.recLF, this.recHFpole, this.recHF, this.repLF, this.repHF, this.bump1, this.bump2, this.bumpHP, this.noiseLP]) b.reset(); this.inX.reset(); this.outX.reset(); }
+    smallSignalPreGain(f) { return this.pre.magnitudeAt(f, this.fs) * this.recHFpole.magnitudeAt(f, this.fs) * this.recLF.magnitudeAt(f, this.fs); }
+
+    // ----- design (main thread) : cfg = {tape, speed, eq, flux, biasDb, transformer, vibe, mono}
+    static design(fs, c) {
+      const ch = new TapeChannel(fs, 128); ch.configure(c); return ch.exportConfig();
+    }
+    configure(c) {
+      const fs = this.fs, ts = TAPES[c.tape], tc = ts.cal, ips = SPEEDS[c.speed], v = ips * 0.0254, eq = eqFor(c.speed, c.eq), flux = FLUX[c.flux];
+      this.cfg = Object.assign({}, c);
+      this.table = buildAnhTable(ts, c.tape, tc.kappa, c.biasDb - (c.vibe ? 1 : 0));
+      this.drive = tc.drive * flux; this.outScale = tc.sens / flux;
+      const L = this.loss; L.v = v; L.coat = ts.coat; L.gap = REPRO_GAP; L.spacing = c.vibe ? SPACING_WORN : SPACING;
+      const zoneNominal = ts.dS10 * 38.1 / 54.6;                           // [ATR Table 5-11] over-bias at 1.5 mil at every speed
+      L.zone = zoneNominal * Math.pow(dB2lin(c.biasDb), 3.0);              // [EST] zone depth ∝ I_bias³
+      const tauFloor = 1 / (2 * PI * 12);
+      if (eq.lf > 0) this.recLF.shelf1(eq.lf * 1e-6, tauFloor, fs, tauFloor / (eq.lf * 1e-6)); else this.recLF.identity();
+      const fHF = 1 / (2 * PI * eq.hf * 1e-6);
+      this.recHFpole.shelf1(0, eq.hf * 1e-6, fs, 1, fHF);
+      const aligned = L.clone(); aligned.zone = zoneNominal; aligned.spacing = SPACING;   // record EQ aligned at operating bias on a clean machine
+      const cap = dB2lin(30);
+      this.pre.set(designMinPhase(f => { const l = aligned.total(Math.max(f, 1)); return 1 / Math.sqrt(l * l + 1 / (cap * cap)); }, fs, 192));
+      this.post.set(designMinPhase(f => L.total(Math.max(f, 1)), fs, 192));
+      this.repHF.shelf1(eq.hf * 1e-6, 1 / (2 * PI * 150000), fs, 1, fHF);
+      if (eq.lf > 0) this.repLF.shelf1(tauFloor, eq.lf * 1e-6, fs, (eq.lf * 1e-6) / tauFloor); else this.repLF.identity();
+      this.recTrim = 1 / Math.max(this.smallSignalPreGain(1000), 1e-6); this.repTrim = 1 / this.recTrim;   // REC GAIN alignment at 1 kHz
+      const fBump = 60 * v / 0.762;                                         // head contour [ATR Fig 5-9][EST shape]
+      this.bump1.peak(fBump, 1.0, 0.6, fs); this.bump2.peak(fBump * 2.1, 1.4, -0.4, fs); this.bumpHP.highpass(fBump * 0.3, 0.6, fs);
+      this.inX.prepare(fs, 3.0, dB2lin(16), 0, 60000, 0.8);                // T2 bridging input [JEN proxy]
+      this.outX.prepare(fs, 2.0, dB2lin(20), 8.0, 80000, 0.7);             // T1 output, 8 dB tertiary NFB [ATR]
+      this.transformer = !!c.transformer;
+      let f3 = 20000; for (let f = 2000; f < 60000; f *= 1.02) { if (L.playback(f) < 0.7071) { f3 = f; break; } }
+      this.noiseLP.lowpass(Math.min(f3, fs * 0.45), 0.6, fs);
+      let snr = 69; if (c.speed === 2) snr = 72; else if (c.speed === 1 && c.eq === 1) snr = 70; else if (c.speed === 0) snr = c.eq === 0 ? 71 : 68;   // [ATR Table 1-4]
+      if (c.mono) snr += 4; snr -= ts.noise; if (c.vibe) snr -= 2;
+      const targetRms = 0.70710678 * dB2lin(lin2dB(1040) - snr) / flux;
+      let p = 0; const df = 10;
+      for (let f = 30; f <= Math.min(18000, 0.49 * fs); f += df) { const m = this.noiseLP.magnitudeAt(f, fs) * this.repHF.magnitudeAt(f, fs) * this.repLF.magnitudeAt(f, fs) * this.bump1.magnitudeAt(f, fs) * this.bumpHP.magnitudeAt(f, fs); p += m * m * df; }
+      this.noiseGain = targetRms / Math.max(Math.sqrt(p / (fs / 2)), 1e-9);
+    }
+    exportConfig() {
+      return {
+        cfg: this.cfg, table: this.table, drive: this.drive, outScale: this.outScale, recTrim: this.recTrim, repTrim: this.repTrim, noiseGain: this.noiseGain, transformer: this.transformer,
+        pre: this.pre.h, post: this.post.h,
+        bq: { recLF: this.recLF.coefs(), recHFpole: this.recHFpole.coefs(), recHF: this.recHF.coefs(), repLF: this.repLF.coefs(), repHF: this.repHF.coefs(), bump1: this.bump1.coefs(), bump2: this.bump2.coefs(), bumpHP: this.bumpHP.coefs(), noiseLP: this.noiseLP.coefs() },
+        inX: this.inX.export(), outX: this.outX.export(),
+      };
+    }
+    applyConfig(o) {
+      this.cfg = o.cfg; this.table = o.table; this.drive = o.drive; this.outScale = o.outScale; this.recTrim = o.recTrim; this.repTrim = o.repTrim; this.noiseGain = o.noiseGain; this.transformer = o.transformer;
+      this.pre.set(o.pre); this.post.set(o.post);
+      for (const k in o.bq) this[k].setCoefs(o.bq[k]);
+      this.inX.setFrom(o.inX); this.outX.setFrom(o.outX);
+    }
+
+    // ----- process one block in place (x: Float32Array, n samples, units 0 VU = 1.0)
+    process(x, n, hissOn, hiss) {
+      const t = this.table, drive = this.drive, outScale = this.outScale, xf = this.transformer;
+      for (let i = 0; i < n; i++) {
+        let v = x[i];
+        if (xf) v = this.inX.process(v);
+        v = this.recLF.process(v); v = this.recHFpole.process(v); v = this.recHF.process(v);
+        x[i] = this.pre.process(v * this.recTrim);
+      }
+      if (this.osFactor === 4) {
+        const u2 = this.tmp2, u4 = this.tmp;
+        for (let i = 0; i < n; i++) this.hb1.up(x[i], u2, 2 * i);
+        for (let i = 0; i < 2 * n; i++) this.hb2.up(u2[i], u4, 2 * i);
+        for (let i = 0; i < 4 * n; i++) u4[i] = anhLookup(t, drive * u4[i]) * outScale;
+        for (let i = 0; i < 2 * n; i++) u2[i] = this.hb2.down(u4[2 * i], u4[2 * i + 1]);
+        for (let i = 0; i < n; i++) x[i] = this.hb1.down(u2[2 * i], u2[2 * i + 1]);
+      } else {
+        const u2 = this.tmp2;
+        for (let i = 0; i < n; i++) this.hb1.up(x[i], u2, 2 * i);
+        for (let i = 0; i < 2 * n; i++) u2[i] = anhLookup(t, drive * u2[i]) * outScale;
+        for (let i = 0; i < n; i++) x[i] = this.hb1.down(u2[2 * i], u2[2 * i + 1]);
+      }
+      for (let i = 0; i < n; i++) {
+        let y = this.post.process(x[i]) * this.repTrim;
+        if (hissOn) y += this.noiseGain * this.noiseLP.process(hiss[i]);
+        y = this.repLF.process(y); y = this.repHF.process(y);
+        y = this.bumpHP.process(this.bump2.process(this.bump1.process(y)));
+        if (xf) y = this.outX.process(y);
+        x[i] = y;
+      }
+    }
+  }
+
+  // ---------------- wow & flutter [ATR Table 1-4]
+  class WowFlutter {
+    constructor(fs) { this.fs = fs; this.len = (fs * 0.02 | 0) + 8; this.buf = new Float32Array(this.len); this.w = 0; this.phW = 0; this.ph1 = 0; this.ph2 = 0; this.scrape = 0; this.rng = 0x9E3779B9; }
+    frand() { let r = this.rng; r ^= r << 13; r ^= r >>> 17; r ^= r << 5; this.rng = r >>> 0; return ((this.rng & 0xFFFFFF) / 8388608) - 1; }
+    process(x, ips, depthPct) {
+      this.buf[this.w] = x;
+      const fs = this.fs, fWow = 0.6, fCap = 13 * ips / 15, fFl2 = 0.44 * fCap;
+      this.phW += 2 * PI * fWow / fs; this.ph1 += 2 * PI * fCap / fs; this.ph2 += 2 * PI * fFl2 / fs;
+      this.scrape += 0.002 * (this.frand() - this.scrape);
+      const k = depthPct * 0.01 * 1.4142 * 1.6;
+      const dev = k * (0.45 * Math.sin(this.phW) + 0.35 * Math.sin(this.ph1) + 0.2 * Math.sin(this.ph2 + 1.3) + 0.6 * this.scrape);
+      const tOff = k * (0.45 * -Math.cos(this.phW) / (2 * PI * fWow) + 0.35 * -Math.cos(this.ph1) / (2 * PI * fCap) + 0.2 * -Math.cos(this.ph2 + 1.3) / (2 * PI * fFl2)) + 0.6 * dev * 1e-4;
+      let d = 0.008 * fs + tOff * fs; d = Math.min(Math.max(d, 1), this.len - 3);
+      const di = d | 0, fr = d - di; let r0 = this.w - di; if (r0 < 0) r0 += this.len; let r1 = r0 - 1; if (r1 < 0) r1 += this.len;
+      const y = (1 - fr) * this.buf[r0] + fr * this.buf[r1];
+      if (++this.w >= this.len) this.w = 0;
+      return y;
+    }
+  }
+
+  return { TAPES, SPEEDS, FLUX, eqFor, dB2lin, lin2dB, LossModel, Biquad, FIR, designMinPhase, buildAnhTable, anhLookup, Transformer, HalfBand, TapeChannel, WowFlutter, WF_DEPTH, erf };
+})();
+if (typeof module !== 'undefined') module.exports = AmpexCore;
+
+</script>
+<script id="ampex-worklet" type="text/plain">
+// ---- AudioWorklet processor (the dsp-core source is prepended to this text at load time)
+class AmpexProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    const fs = sampleRate;
+    this.fs = fs;
+    this.ch = [new AmpexCore.TapeChannel(fs, 128), new AmpexCore.TapeChannel(fs, 128)];
+    this.wf = [new AmpexCore.WowFlutter(fs), new AmpexCore.WowFlutter(fs)];
+    this.wf[1].rng = 0x12345678;
+    this.rng = [0x1234567, 0x7654321];
+    this.p = { inDb: 0, outDb: 0, headroomDb: 0, monitor: 1, tapeHiss: 0, wowFlutter: 0, preserveAmount: 0, postDb: 0, mix: 1, mono: 0, speed: 1, vibe: 0 };
+    this.cfgReady = false;
+    this.work = [new Float32Array(128), new Float32Array(128)];
+    this.noise = [new Float32Array(128), new Float32Array(128)];
+    this.dryLen = 64; this.dry = [new Float32Array(64), new Float32Array(64)]; this.dryPos = 0;
+    this.meter = [0, 0]; this.meterAcc = 0;
+    this.port.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === 'config') { this.ch[0].applyConfig(m.data); this.ch[1].applyConfig(m.data); this.p.mono = m.data.cfg.mono ? 1 : 0; this.p.speed = m.data.cfg.speed; this.p.vibe = m.data.cfg.vibe ? 1 : 0; this.cfgReady = true; }
+      else if (m.type === 'params') Object.assign(this.p, m.data);
+      else if (m.type === 'reset') { this.ch[0].reset(); this.ch[1].reset(); }
+    };
+  }
+  gauss(c) { let s = 0; for (let k = 0; k < 4; k++) { let r = this.rng[c]; r ^= r << 13; r ^= r >>> 17; r ^= r << 5; this.rng[c] = r >>> 0; s += ((this.rng[c] & 0xFFFFFF) / 8388608) - 1; } return s * 0.8660254; }
+  process(inputs, outputs) {
+    const inp = inputs[0], out = outputs[0];
+    if (!out || out.length === 0) return true;
+    const n = out[0].length;
+    const L = (inp && inp[0]) || new Float32Array(n), R = (inp && inp[1]) || L;
+    const oL = out[0], oR = out[1] || oL;
+    const p = this.p;
+    if (!this.cfgReady || p.monitor < 0.5) {               // INPUT monitor → hard bypass (unity), meters off
+      oL.set(L); if (oR !== oL) oR.set(R);
+      this.meter[0] = this.meter[1] = 0; this.postMeter(n); return true;
+    }
+    const db2 = AmpexCore.dB2lin;
+    const inGain = db2(p.inDb), calGain = db2(18 - p.headroomDb), decal = 1 / calGain, outGain = db2(p.outDb) * db2(p.postDb);
+    const wetMix = p.mix, dryMix = 1 - p.mix, lat = this.ch[0].latencySamples();
+    const hissOn = p.tapeHiss > 0.5, wfOn = p.wowFlutter > 0.5, mono = p.mono > 0.5, pres = p.preserveAmount;
+    const w0 = this.work[0], w1 = this.work[1];
+    const nch = mono ? 1 : 2;
+    for (let c = 0; c < nch; c++) {
+      const w = this.work[c], src = c === 0 ? L : R;
+      if (mono) for (let i = 0; i < n; i++) w[i] = 0.5 * (L[i] + R[i]) * inGain * calGain;
+      else for (let i = 0; i < n; i++) w[i] = src[i] * inGain * calGain;
+      if (hissOn) { const nz = this.noise[c]; for (let i = 0; i < n; i++) nz[i] = this.gauss(c); }
+      this.ch[c].process(w, n, hissOn, this.noise[c]);
+    }
+    if (mono) w1.set(w0.subarray(0, n));
+    if (wfOn) {
+      const d = AmpexCore.WF_DEPTH[p.speed] * (p.vibe ? 1.5 : 1), ips = AmpexCore.SPEEDS[p.speed];
+      for (let c = 0; c < 2; c++) { const w = this.work[c], f = this.wf[c]; for (let i = 0; i < n; i++) w[i] = f.process(w[i], ips, d); }
+    }
+    let sL = 0, sR = 0;
+    const dL0 = this.dry[0], dR0 = this.dry[1], dlen = this.dryLen;
+    for (let i = 0; i < n; i++) {
+      dL0[this.dryPos] = L[i]; dR0[this.dryPos] = R[i];
+      let rd = this.dryPos - lat; if (rd < 0) rd += dlen;
+      const dL = dL0[rd], dR = dR0[rd];
+      if (++this.dryPos >= dlen) this.dryPos = 0;
+      let yL = w0[i], yR = w1[i];
+      sL += yL * yL; sR += yR * yR;
+      yL *= decal; yR *= decal;
+      if (pres > 0) { yL += pres * (dL * inGain - yL); yR += pres * (dR * inGain - yR); }
+      yL = (dL * dryMix + yL * wetMix) * outGain; yR = (dR * dryMix + yR * wetMix) * outGain;
+      if (!Number.isFinite(yL)) yL = 0; if (!Number.isFinite(yR)) yR = 0;
+      oL[i] = yL; oR[i] = yR;
+    }
+    const k = 1.41421356 * 0.12589254, sm = 0.8;             // 0 VU sine (rms .707 in tape units) → −18 dBFS
+    this.meter[0] = sm * this.meter[0] + (1 - sm) * Math.sqrt(sL / n) * k;
+    this.meter[1] = sm * this.meter[1] + (1 - sm) * Math.sqrt(sR / n) * k;
+    this.postMeter(n);
+    return true;
+  }
+  postMeter(n) {
+    this.meterAcc += n;
+    if (this.meterAcc >= 1024) {        // ≈ every 21 ms at 48 k
+      this.meterAcc = 0;
+      const dbL = this.meter[0] > 1e-6 ? 20 * Math.log10(this.meter[0]) : -120, dbR = this.meter[1] > 1e-6 ? 20 * Math.log10(this.meter[1]) : -120;
+      this.port.postMessage({ type: 'meter', l: dbL, r: dbR });
+    }
+  }
+}
+registerProcessor('analogexact-atr102', AmpexProcessor);
+
+</script>
+<script>
+// =====================================================================
+//  ANALOGEXACT · Ampex ATR-102  —  front panel + audio engine
+// =====================================================================
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const C = AmpexCore;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const HOSTED = (typeof window.__JUCE_HOST__ !== 'undefined') || location.protocol === 'data:' || location.protocol === 'juce:';
+
+// ---------------- parameter model (same IDs/ranges as the VST3's APVTS)
+const P = { inDb: 0, outDb: 0, biasDb: 0, headroomDb: 0, monitor: 1, headblock: 0, speed: 1, flux: 1, eqStd: 0, tapeType: 1,
+            transformer: 1, tapeHiss: 0, wowFlutter: 0, vibe: 0, preserveAmount: 0, postDb: 0, mix: 1 };
+const RANGE = { inDb: [-12, 12], outDb: [-24, 6], biasDb: [-5, 5], headroomDb: [-12, 12], preserveAmount: [0, 1], postDb: [-12, 12], mix: [0, 1] };
+const CONFIG_KEYS = new Set(['tapeType', 'speed', 'eqStd', 'flux', 'biasDb', 'transformer', 'vibe', 'headblock']);
+const TAPE_NAMES = ['406', '456', '499', 'GP9', 'SM900', 'SM911'];
+const TAPE_LONG = ['Ampex 406', 'Ampex 456 Grand Master', 'Ampex 499 Grand Master Gold', 'Quantegy GP9', 'EMTEC/RMGI SM900', 'EMTEC/RMGI SM911'];
+try { const s = JSON.parse(localStorage.getItem('ae.atr102.params') || 'null'); if (s && !HOSTED) Object.assign(P, s); } catch (e) {}
+
+const stage = $('#stage');
+let fromHost = false;
+
+// ---------------- rotary knobs (SVG)
+function knobSVG(size, big) {
+  const r = size / 2, ns = 'http://www.w3.org/2000/svg';
+  let ticks = '';
+  if (big) for (let i = 0; i <= 10; i++) {
+    const a = (-135 + 27 * i) * Math.PI / 180, x1 = r + (r - 1) * Math.sin(a), y1 = r - (r - 1) * Math.cos(a), x2 = r + (r - 5) * Math.sin(a), y2 = r - (r - 5) * Math.cos(a);
+    ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#d8d8d2" stroke-width="${i % 5 === 0 ? 1.6 : 1}"/>`;
+    if (i % 10 === 0) { const tx = r + (r + 7) * Math.sin(a), ty = r - (r + 7) * Math.cos(a); ticks += `<text x="${tx.toFixed(1)}" y="${(ty + 3).toFixed(1)}" font-size="7.5" fill="#bdbdb6" text-anchor="middle" font-family="var(--font)" font-weight="600">${i}</text>`; }
+  }
+  const cr = big ? r - 8 : r - 4;
+  return `<svg viewBox="0 0 ${size} ${size}" xmlns="${ns}">
+    <defs><radialGradient id="kc${size}" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#4a4a4e"/><stop offset=".6" stop-color="#1b1b1d"/><stop offset="1" stop-color="#050506"/></radialGradient>
+    <linearGradient id="ks${size}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3e"/><stop offset="1" stop-color="#121214"/></linearGradient></defs>
+    ${big ? `<circle cx="${r}" cy="${r}" r="${r - 1}" fill="url(#ks${size})" stroke="#000" stroke-width=".8"/>` : ''}
+    ${ticks}
+    <g class="cap"><circle cx="${r}" cy="${r}" r="${cr}" fill="url(#kc${size})" stroke="#000" stroke-width="1"/>
+      <circle cx="${r}" cy="${r}" r="${cr - 3}" fill="none" stroke="#ffffff10" stroke-width="1"/>
+      <line x1="${r}" y1="${r - cr + 3}" x2="${r}" y2="${r - cr * 0.35}" stroke="#f4f4ee" stroke-width="${big ? 2.4 : 2}" stroke-linecap="round"/></g>
+  </svg>`;
+}
+class Knob {
+  constructor(el, { min, max, value, fmt, onChange, step = 0, detents = null }) {
+    this.el = el; this.min = min; this.max = max; this.v = value; this.fmt = fmt; this.onChange = onChange; this.step = step; this.detents = detents;
+    const big = !el.classList.contains('sm'); el.innerHTML = knobSVG(big ? 62 : 46, big); this.cap = $('.cap', el);
+    el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max);
+    let startY = 0, startV = 0, moved = false;
+    el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); startY = e.clientY; startV = this.v; moved = false; e.preventDefault(); el.focus(); });
+    el.addEventListener('pointermove', (e) => { if (!el.hasPointerCapture(e.pointerId)) return; const dy = startY - e.clientY; if (Math.abs(dy) > 2) moved = true; const span = max - min; this.set(startV + dy / (e.shiftKey ? 1200 : 200) * span, true); });
+    el.addEventListener('pointerup', (e) => { if (!moved && detents) this.set(this.nextDetent(), true); });
+    el.addEventListener('dblclick', () => this.set(this.def ?? value, true));
+    el.addEventListener('wheel', (e) => { e.preventDefault(); const span = max - min; this.set(this.v - Math.sign(e.deltaY) * span * (detents ? 1 / (detents.length - 1) : 0.01), true); }, { passive: false });
+    el.addEventListener('keydown', (e) => { const span = max - min, st = detents ? span / (detents.length - 1) : Math.max(this.step || 0, span / 100); if (e.key === 'ArrowUp' || e.key === 'ArrowRight') this.set(this.v + st, true); else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') this.set(this.v - st, true); else return; e.preventDefault(); });
+    this.def = value; this.render();
+  }
+  nextDetent() { const i = this.detents.indexOf(this.v); return this.detents[(i + 1) % this.detents.length]; }
+  set(v, user) {
+    v = clamp(v, this.min, this.max);
+    if (this.detents) { let best = this.detents[0]; for (const d of this.detents) if (Math.abs(d - v) < Math.abs(best - v)) best = d; v = best; }
+    else if (this.step) v = Math.round(v / this.step) * this.step;
+    if (v === this.v && user) return;
+    this.v = v; this.render(); if (user) this.onChange(v);
+  }
+  render() { const t = (this.v - this.min) / (this.max - this.min); const ang = this.detents ? -60 + 120 * t : -135 + 270 * t; this.cap.style.transform = `rotate(${ang}deg)`; this.el.setAttribute('aria-valuenow', this.v.toFixed(2)); if (this.fmt) this.fmt(this.v); }
+}
+
+// ---------------- VU meters (SVG), true VU deflection: 0 VU = 71 % of arc, +3 = full scale
+function vuSVG() {
+  const cx = 104, cy = 150, R = 118, marks = [-20, -10, -7, -5, -3, -2, -1, 0, 1, 2, 3];
+  const ang = (db) => -45 + 90 * Math.pow(10, db / 20) * 0.7071;
+  const pt = (a, r) => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+  const arc = (a0, a1, r) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+  let s = '';
+  for (const m of marks) { const a = ang(m); const [x0, y0] = pt(a, R - (m >= 0 ? 10 : 8)), [x1, y1] = pt(a, R); const [tx, ty] = pt(a, R - 19);
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${m > 0 ? '#9a1d14' : '#141210'}" stroke-width="${m === 0 ? 2 : 1.2}"/>`;
+    s += `<text x="${tx.toFixed(1)}" y="${(ty + 3.5).toFixed(1)}" text-anchor="middle" font-size="${m === 0 ? 11 : 9}" font-weight="600" fill="${m > 0 ? '#9a1d14' : '#141210'}" font-family="var(--font)">${m > 0 ? '+' + m : (m === 0 ? '0' : m)}</text>`; }
+  // minor ticks between −10..+3 at 1 dB where not labelled
+  for (let m = -9; m <= 2; m++) if (!marks.includes(m)) { const a = ang(m); const [x0, y0] = pt(a, R - 5), [x1, y1] = pt(a, R); s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#141210" stroke-width=".8"/>`; }
+  return `<svg viewBox="0 0 208 126" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="vg" cx="50%" cy="95%" r="90%"><stop offset="0" stop-color="#fff2cf" stop-opacity=".55"/><stop offset=".6" stop-color="#ffcf7a" stop-opacity=".15"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+    <rect class="vu-face" x="0" y="0" width="208" height="126"/>
+    <rect class="vu-glow" x="0" y="0" width="208" height="126" fill="url(#vg)"/>
+    <path d="${arc(ang(-20), ang(0), R)}" fill="none" stroke="#141210" stroke-width="2"/>
+    <path d="${arc(ang(0), ang(3), R)}" fill="none" stroke="#9a1d14" stroke-width="4"/>
+    ${s}
+    <text x="104" y="84" text-anchor="middle" font-size="18" font-weight="700" fill="#141210" font-family="var(--font)" letter-spacing="2">VU</text>
+    <text x="104" y="98" text-anchor="middle" font-size="6.5" fill="#3a3630" font-family="var(--font)" letter-spacing="1.5">AMPEX · ATR-102</text>
+    <line class="needle" x1="104" y1="150" x2="104" y2="26" stroke="#141210" stroke-width="1.6" transform="rotate(-45 104 150)"/>
+    <path d="M86 126 L122 126 L118 112 A14 14 0 0 0 90 112 Z" fill="#111"/>
+    <rect x="0" y="0" width="208" height="126" fill="none" stroke="#000" stroke-width="4"/>
+  </svg>`;
+}
+class VU {
+  constructor(win) { win.innerHTML = vuSVG(); this.needle = $('.needle', win); this.db = -60; this.disp = -60; }
+  setDb(db) { this.db = db; }
+  tick(dt) { const tau = this.db > this.disp ? 0.12 : 0.18; const a = 1 - Math.exp(-dt / tau); this.disp += (this.db - this.disp) * a; const d = clamp(Math.pow(10, (this.disp + 18) / 20) * 0.7071, 0, 1.06); this.needle.setAttribute('transform', `rotate(${(-45 + 90 * d).toFixed(2)} 104 150)`); }
+}
+const vuL = new VU($('#vuLwin')), vuR = new VU($('#vuRwin'));
+
+// ---------------- reels (10.5" NAB metal reels)
+function reelSVG(id) {
+  let win = '';
+  for (let k = 0; k < 3; k++) { const a = k * 120; win += `<path transform="rotate(${a} 150 150)" d="M150 60 A90 90 0 0 1 228 105 L196 124 A53 53 0 0 0 150 97 Z" fill="#000"/>`; }
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="rm${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f1f0ea"/><stop offset=".55" stop-color="#b9b8b1"/><stop offset="1" stop-color="#7d7c76"/></radialGradient>
+    <radialGradient id="tp${id}" cx="50%" cy="50%" r="50%"><stop offset=".3" stop-color="#2f2219"/><stop offset=".9" stop-color="#4a3626"/><stop offset="1" stop-color="#2b1f16"/></radialGradient>
+    <mask id="mk${id}"><rect width="300" height="300" fill="#fff"/>${win}</mask></defs>
+    <circle cx="150" cy="150" r="149" fill="#101113"/>
+    <circle class="pack" cx="150" cy="150" r="128" fill="url(#tp${id})"/>
+    <g class="spin">
+      <g mask="url(#mk${id})"><circle cx="150" cy="150" r="146" fill="url(#rm${id})" stroke="#5a5955" stroke-width="1.5"/>
+      <circle cx="150" cy="150" r="138" fill="none" stroke="#ffffff55" stroke-width="1"/></g>
+      <circle cx="150" cy="150" r="48" fill="#1b1c1f" stroke="#55565a" stroke-width="2"/>
+      <circle cx="150" cy="150" r="30" fill="#2a2b2f" stroke="#000"/>
+      <g fill="#cfcec8"><circle cx="150" cy="117" r="4"/><circle cx="178.6" cy="166.5" r="4"/><circle cx="121.4" cy="166.5" r="4"/></g>
+      <circle cx="150" cy="150" r="9" fill="#0b0b0c"/>
+    </g></svg>`;
+}
+$('#reelL').innerHTML = reelSVG('L'); $('#reelR').innerHTML = reelSVG('R');
+const spinL = $('#reelL .spin'), spinR = $('#reelR .spin'), packL = $('#reelL .pack'), packR = $('#reelR .pack');
+let angL = 0, angR = 0, posFrac = 0.15;   // fraction of the tape wound onto the take-up reel
+const REEL_PX = 264, RSC = REEL_PX / 300, CXL = 118 + REEL_PX / 2, CXR = 770 + REEL_PX / 2, CY = 34 + REEL_PX / 2;
+function reelRadii() { const rmin = 52, rmax = 128; const a = (1 - posFrac) * (rmax * rmax - rmin * rmin) + rmin * rmin, b = posFrac * (rmax * rmax - rmin * rmin) + rmin * rmin; return [Math.sqrt(a), Math.sqrt(b)]; }   // in viewBox units (300 = reel)
+function drawTapePath() {
+  const [rl, rr] = reelRadii(); const RL = rl * RSC, RR = rr * RSC;
+  const gx1 = 396, gy1 = 354, gx2 = 756, gy2 = 354, gr = 10;
+  // tangent from the pack circle to the tension roller (outer tangent, tape leaves the right side of the supply reel)
+  const tan = (cx, cy, R, px, py, sign) => { const dx = px - cx, dy = py - cy, D = Math.hypot(dx, dy), b = Math.atan2(dy, dx), g = Math.acos(Math.min(1, R / D)); const t = b + sign * g; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; };
+  const p1 = tan(CXL, CY, RL, gx1, gy1 - gr, -1), p2 = tan(CXR, CY, RR, gx2, gy2 - gr, 1);
+  const mid = `L${gx1 + 6} ${gy1 - gr + 1} L452 344 L700 344 L${gx2 - 6} ${gy2 - gr + 1}`;
+  const d = `M${p1[0].toFixed(1)} ${p1[1].toFixed(1)} L${gx1} ${gy1 - gr} ${mid} L${gx2} ${gy2 - gr} L${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  $('#tapePath').setAttribute('d', d); $('#tapePathHi').setAttribute('d', d);
+  const dt = `M${gx1} ${gy1 - gr} ${mid} L${gx2} ${gy2 - gr}`; $('#tapePathTop').setAttribute('d', dt); $('#tapePathTopHi').setAttribute('d', dt);
+  packL.setAttribute('r', rl.toFixed(1)); packR.setAttribute('r', rr.toFixed(1));
+}
+drawTapePath();
+
+// ---------------- keys
+function mkKey(label, id, cls = '') { const b = document.createElement('button'); b.className = 'key ' + cls; b.id = id; b.innerHTML = `<span class="led"></span><span>${label}</span>`; return b; }
+const tapeKeys = $('#tapeKeys'), fluxKeys = $('#fluxKeys');
+TAPE_NAMES.forEach((n, i) => { const k = mkKey(n, 'tape-' + i); k.title = TAPE_LONG[i]; k.onclick = () => setParam('tapeType', i, true); tapeKeys.appendChild(k); });
+C.FLUX.forEach((f, i) => { const k = mkKey(f, 'flux-' + i); k.title = f + ' nWb/m operating level'; k.onclick = () => setParam('flux', i, true); fluxKeys.appendChild(k); });
+const matrix = $('#matrix');
+function rowLab(t) { const s = document.createElement('span'); s.className = 'row-lab'; s.textContent = t; return s; }
+matrix.append(rowLab('Monitor'), mkKey('Input', 'k-mon-in'), mkKey('Repro', 'k-mon-rep'), rowLab('EQ'), mkKey('NAB', 'k-nab'));
+matrix.append(rowLab('Heads'), mkKey('Stereo', 'k-st'), mkKey('Mono', 'k-mono'), rowLab(''), mkKey('IEC', 'k-iec'));
+matrix.append(rowLab('Model'), mkKey('XFMR', 'k-xf'), mkKey('Hiss', 'k-hiss'), mkKey('W&F', 'k-wf'), mkKey('Vibe', 'k-vibe'));
+$('#k-mon-in').onclick = () => setParam('monitor', 0, true); $('#k-mon-rep').onclick = () => setParam('monitor', 1, true);
+$('#k-nab').onclick = () => setParam('eqStd', 0, true); $('#k-iec').onclick = () => setParam('eqStd', 1, true);
+$('#k-st').onclick = () => setParam('headblock', 0, true); $('#k-mono').onclick = () => setParam('headblock', 1, true);
+$('#k-xf').onclick = () => setParam('transformer', P.transformer ? 0 : 1, true); $('#k-hiss').onclick = () => setParam('tapeHiss', P.tapeHiss ? 0 : 1, true);
+$('#k-wf').onclick = () => setParam('wowFlutter', P.wowFlutter ? 0 : 1, true); $('#k-vibe').onclick = () => setParam('vibe', P.vibe ? 0 : 1, true);
+$('#k-nab').title = 'NAB: 3180 + 50 µs (7.5/15 ips)'; $('#k-iec').title = 'IEC/CCIR: 70 µs @7.5, 35 µs @15'; $('#k-xf').title = 'Input/output transformer model (T2 bridging in, T1 out)';
+$('#k-vibe').title = 'Worn/under-biased machine: −1 dB bias, 1.0 µm spacing, +50 % flutter, −2 dB S/N'; $('#k-mono').title = '¼-in full-track headblock: L+R summed, +4 dB S/N';
+const transport = $('#transport');
+transport.append(rowLab('Source'), mkKey('File', 'k-file'), mkKey('Mic', 'k-mic'), mkKey('Tone', 'k-tone'), mkKey('Rec', 'k-rec', 'red'));
+transport.append(rowLab('Deck'), mkKey('◀◀', 'k-rew', 'icon'), mkKey('Stop', 'k-stop', 'red'), mkKey('Play', 'k-play', 'red'), mkKey('▶▶', 'k-ff', 'icon'));
+$('#k-rec').title = 'Arm the microphone and roll'; $('#k-tone').title = '1 kHz sine at 0 VU (−18 dBFS)'; $('#k-file').title = 'Load an audio file (or drop one on the deck)'; $('#k-rew').title = 'Back 15 s'; $('#k-ff').title = 'Forward 15 s';
+
+// ---------------- knobs wiring
+const fmtDb = (id) => (v) => { $(id).textContent = (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + ' dB'; };
+const knobs = {
+  inDb: new Knob($('#k-in'), { min: -12, max: 12, value: P.inDb, step: 0.1, fmt: fmtDb('#v-in'), onChange: v => setParam('inDb', v, true) }),
+  outDb: new Knob($('#k-out'), { min: -24, max: 6, value: P.outDb, step: 0.1, fmt: fmtDb('#v-out'), onChange: v => setParam('outDb', v, true) }),
+  biasDb: new Knob($('#k-bias'), { min: -5, max: 5, value: P.biasDb, step: 0.1, fmt: fmtDb('#v-bias'), onChange: v => setParam('biasDb', v, true) }),
+  headroomDb: new Knob($('#k-cal'), { min: -12, max: 12, value: P.headroomDb, step: 0.5, fmt: (v) => { fmtDb('#v-cal')(v); const d = v - 18; $('#calTxt').textContent = (d > 0 ? '+' : '\u2212') + Math.abs(d).toFixed(1).replace(/\.0$/, '') + ' dBFS'; }, onChange: v => setParam('headroomDb', v, true) }),
+  mix: new Knob($('#k-mix'), { min: 0, max: 1, value: P.mix, step: 0.01, fmt: v => { $('#v-mix').textContent = Math.round(v * 100) + ' %'; }, onChange: v => setParam('mix', v, true) }),
+  postDb: new Knob($('#k-post'), { min: -12, max: 12, value: P.postDb, step: 0.1, fmt: fmtDb('#v-post'), onChange: v => setParam('postDb', v, true) }),
+  preserveAmount: new Knob($('#k-pres'), { min: 0, max: 1, value: P.preserveAmount, step: 0.01, fmt: v => { $('#v-pres').textContent = Math.round(v * 100) + ' %'; }, onChange: v => setParam('preserveAmount', v, true) }),
+  speed: new Knob($('#k-speed'), { min: 0, max: 2, value: P.speed, detents: [0, 1, 2], onChange: v => setParam('speed', v, true) }),
+};
+knobs.inDb.def = 0; knobs.outDb.def = 0; knobs.biasDb.def = 0; knobs.headroomDb.def = 0; knobs.mix.def = 1; knobs.postDb.def = 0; knobs.preserveAmount.def = 0; knobs.speed.def = 1;
+
+// ---------------- state → UI
+function tapeSpec() {
+  const ts = C.TAPES[P.tapeType], flux = C.FLUX[P.flux];
+  // headroom to the 3 % THD point above the operating level, from the tape sheet MOL (3 % at 1 kHz, nWb/m)
+  const molVu = 20 * Math.log10(ts.mol / flux);
+  const spd = C.SPEEDS[P.speed]; let snr = 69; if (P.speed === 2) snr = 72; else if (P.speed === 1 && P.eqStd === 1) snr = 70; else if (P.speed === 0) snr = P.eqStd === 0 ? 71 : 68;
+  if (P.headblock) snr += 4; snr -= ts.noise; if (P.vibe) snr -= 2; snr += 20 * Math.log10(flux / 250);    // S/N re the operating level
+  return { molVu, snr, spd, thd: ts.thd, ref: ts.ref };
+}
+function refresh() {
+  for (const k in knobs) knobs[k].set(P[k], false);
+  TAPE_NAMES.forEach((_, i) => $('#tape-' + i).classList.toggle('on', P.tapeType === i));
+  C.FLUX.forEach((_, i) => $('#flux-' + i).classList.toggle('on', P.flux === i));
+  $('#k-mon-in').classList.toggle('on', !P.monitor); $('#k-mon-rep').classList.toggle('on', !!P.monitor);
+  $('#k-nab').classList.toggle('on', P.eqStd === 0); $('#k-iec').classList.toggle('on', P.eqStd === 1);
+  $('#k-st').classList.toggle('on', !P.headblock); $('#k-mono').classList.toggle('on', !!P.headblock);
+  $('#k-xf').classList.toggle('on', !!P.transformer); $('#k-hiss').classList.toggle('on', !!P.tapeHiss); $('#k-wf').classList.toggle('on', !!P.wowFlutter); $('#k-vibe').classList.toggle('on', !!P.vibe);
+  const sp = tapeSpec(), eq = C.eqFor(P.speed, P.eqStd);
+  $('#tdName').textContent = TAPE_NAMES[P.tapeType]; $('#tdFlux').textContent = C.FLUX[P.flux] + ' nWb/m';
+  $('#tdSpec').textContent = `MOL +${sp.molVu.toFixed(1)} VU · S/N ${Math.round(sp.snr)} dB · ${sp.spd} ips ${eq.name}`;
+  $('#eqTxt').textContent = `${sp.spd} IPS ${eq.name}`; $('#fluxTxt').textContent = C.FLUX[P.flux] + ' nWb/m';
+  $('#headTxt').innerHTML = (P.headblock ? '<b>¼ IN · FULL TRACK</b>' : '<b>½ IN · 2 TRACK</b>') + 'ATR-102 HEADS'; $('#speedTxt').textContent = sp.spd + ' ips';
+  $('#tapeDisp').title = TAPE_LONG[P.tapeType] + ` — Hc ${C.TAPES[P.tapeType].Hc} A/m, coating ${C.TAPES[P.tapeType].coat} µm, ref ${sp.ref} nWb/m`;
+}
+
+// ---------------- param changes → engine (+ host)
+let designTimer = 0;
+function setParam(id, v, user) {
+  if (id in RANGE) v = clamp(v, RANGE[id][0], RANGE[id][1]);
+  P[id] = v;
+  refresh();
+  if (CONFIG_KEYS.has(id)) scheduleDesign(); else engine.pushParams();
+  if (user) { toHost(id, v); if (!HOSTED) try { localStorage.setItem('ae.atr102.params', JSON.stringify(P)); } catch (e) {} }
+}
+function scheduleDesign() { clearTimeout(designTimer); designTimer = setTimeout(() => engine.pushConfig(), 40); }
+
+// ---------------- JUCE bridge (same contract as the shipped editor)
+function toHost(id, v) {
+  if (!HOSTED || fromHost) return;
+  let out = v;
+  if (id === 'speed') out = C.SPEEDS[v];            // editor maps ips → index
+  if (id === 'flux') out = C.FLUX[v];               // editor maps nWb/m → index
+  hostSend(`juce://param/${id}/${(+out).toFixed(6)}`);
+}
+function hostSend(url) { if (window.__JUCE_HOST__ && typeof window.__JUCE_HOST__.send === 'function') window.__JUCE_HOST__.send(url); else location.href = url; }
+window.juceSetParam = (id, raw) => {
+  if (!(id in P)) return;
+  fromHost = true;
+  const v = (id in RANGE) ? +raw : Math.round(+raw);
+  if (Math.abs(P[id] - v) > 1e-6) setParam(id, v, false);
+  fromHost = false;
+};
+window.juceUpdateVU = (l, r) => { vuL.setDb(l); vuR.setDb(r); hostLevel = Math.max(l, r); };
+let hostLevel = -120;
+
+// ---------------- audio engine
+const engine = {
+  ctx: null, node: null, src: null, gain: null, running: false, source: 'file', buffer: null, fileName: '', startedAt: 0, offset: 0, mic: null, osc: null, ready: false,
+  async start() {
+    if (this.ctx) { if (this.ctx.state !== 'running') await this.ctx.resume(); return; }
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    this.ctx = ctx;
+    const core = document.getElementById('ampex-core').textContent;
+    const url = URL.createObjectURL(new Blob([core + '\n' + WORKLET_SRC], { type: 'application/javascript' }));
+    await ctx.audioWorklet.addModule(url);
+    this.node = new AudioWorkletNode(ctx, 'analogexact-atr102', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+    this.node.port.onmessage = (e) => { if (e.data.type === 'meter') { vuL.setDb(e.data.l); vuR.setDb(e.data.r); } };
+    this.gain = ctx.createGain(); this.gain.gain.value = 1;
+    this.gain.connect(this.node).connect(ctx.destination);
+    this.ready = true; this.pushConfig(); this.pushParams();
+  },
+  pushConfig() { if (!this.ready) return; const cfg = { tape: P.tapeType, speed: P.speed, eq: P.eqStd, flux: P.flux, biasDb: P.biasDb, transformer: !!P.transformer, vibe: !!P.vibe, mono: !!P.headblock }; const t0 = performance.now(); const data = C.TapeChannel.design(this.ctx.sampleRate, cfg); this.node.port.postMessage({ type: 'config', data }); this.lastDesignMs = performance.now() - t0; },
+  pushParams() { if (!this.ready) return; this.node.port.postMessage({ type: 'params', data: { inDb: P.inDb, outDb: P.outDb, headroomDb: P.headroomDb, monitor: P.monitor, tapeHiss: P.tapeHiss, wowFlutter: P.wowFlutter, preserveAmount: P.preserveAmount, postDb: P.postDb, mix: P.mix } }); },
+  stopSource() { if (this.src) { try { this.src.stop(); } catch (e) {} try { this.src.disconnect(); } catch (e) {} this.src = null; } if (this.osc) { try { this.osc.stop(); } catch (e) {} this.osc = null; } if (this.micNode) { try { this.micNode.disconnect(); } catch (e) {} this.micNode = null; } if (this.running && this.source === 'file') this.offset = this.position(); this.running = false; },
+  position() { if (!this.buffer) return 0; if (!this.running || this.source !== 'file') return this.offset; return (this.offset + (this.ctx.currentTime - this.startedAt)) % this.buffer.duration; },
+  async play() {
+    await this.start(); this.stopSource();
+    const ctx = this.ctx;
+    if (this.source === 'file') {
+      if (!this.buffer) { toast('No tape loaded — drop an audio file on the deck or press REC for the mic'); return; }
+      const s = ctx.createBufferSource(); s.buffer = this.buffer; s.loop = true; s.connect(this.gain); s.start(0, this.offset % this.buffer.duration); this.src = s; this.startedAt = ctx.currentTime;
+    } else if (this.source === 'tone') {
+      const o = ctx.createOscillator(); o.frequency.value = 1000; const g = ctx.createGain(); g.gain.value = Math.pow(10, -18 / 20); o.connect(g).connect(this.gain); o.start(); this.osc = o; this.src = g; this.startedAt = ctx.currentTime;
+    } else {
+      if (!this.mic) { try { this.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); } catch (e) { toast('Microphone unavailable: ' + (e.message || e.name) + (location.protocol === 'http:' ? ' (needs HTTPS)' : '')); return; } }
+      this.micNode = ctx.createMediaStreamSource(this.mic); this.micNode.connect(this.gain); this.startedAt = ctx.currentTime;
+    }
+    this.running = true; this.node.port.postMessage({ type: 'reset' }); updateTransport();
+  },
+  stop() { this.stopSource(); updateTransport(); },
+  async loadFile(file) {
+    await this.start(); const was = this.running; this.stopSource();
+    try { const ab = await file.arrayBuffer(); this.buffer = await this.ctx.decodeAudioData(ab); this.fileName = file.name; this.offset = 0; posFrac = 0.02; toast(`Loaded ${file.name} — ${this.buffer.duration.toFixed(1)} s, ${this.buffer.numberOfChannels} ch, ${this.buffer.sampleRate} Hz`); this.source = 'file'; if (was || true) this.play(); }
+    catch (e) { toast('Could not decode that file: ' + (e.message || e)); }
+    updateTransport();
+  },
+  seek(dt) { if (!this.buffer) return; const pos = this.position(); this.offset = ((pos + dt) % this.buffer.duration + this.buffer.duration) % this.buffer.duration; if (this.running) { this.stopSource(); this.play(); } else updateTransport(); },
+};
+const WORKLET_SRC = document.getElementById('ampex-worklet').textContent;
+
+// ---------------- transport / source UI
+function setSource(s) { engine.source = s; if (engine.running) engine.play(); updateTransport(); }
+$('#k-file').onclick = () => { if (engine.buffer && engine.source !== 'file') setSource('file'); else $('#file').click(); };
+$('#k-mic').onclick = () => setSource('mic'); $('#k-rec').onclick = () => { setSource('mic'); engine.play(); };
+$('#k-tone').onclick = () => setSource('tone');
+$('#k-play').onclick = () => engine.play(); $('#k-stop').onclick = () => engine.stop();
+$('#k-rew').onclick = () => engine.seek(-15); $('#k-ff').onclick = () => engine.seek(15);
+$('#file').onchange = (e) => { const f = e.target.files[0]; if (f) engine.loadFile(f); e.target.value = ''; };
+const deck = $('#deck');
+['dragenter', 'dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add('dragging'); }));
+['dragleave', 'drop'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === stage) stage.classList.remove('dragging'); }));
+stage.addEventListener('drop', e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) engine.loadFile(f); });
+function updateTransport() {
+  if (HOSTED) { $('#srcDisp').textContent = 'HOST'; setPower(true); return; }
+  $('#k-file').classList.toggle('on', engine.source === 'file'); $('#k-mic').classList.toggle('on', engine.source === 'mic'); $('#k-tone').classList.toggle('on', engine.source === 'tone');
+  $('#k-play').classList.toggle('on', engine.running); $('#k-stop').classList.toggle('on', !engine.running); $('#k-rec').classList.toggle('on', engine.running && engine.source === 'mic');
+  $('#srcDisp').textContent = engine.source === 'file' ? (engine.fileName ? engine.fileName.replace(/\.[^.]+$/, '').slice(0, 10) : 'FILE') : engine.source.toUpperCase();
+  setPower(!!engine.ctx && engine.ctx.state === 'running');
+}
+function setPower(on) { stage.classList.toggle('off', !on); stage.classList.toggle('on', on); $('#pwr').classList.toggle('on', on); $('#pwrSw').setAttribute('aria-checked', on); $('#pwrTxt').textContent = on ? 'ON' : 'OFF'; $('#pwrTxt').style.color = on ? 'var(--amber)' : '#8a8a84'; }
+$('#pwrSw').onclick = async () => { if (engine.ctx && engine.ctx.state === 'running') { engine.stop(); await engine.ctx.suspend(); } else { await engine.start(); } updateTransport(); };
+$('#pwrSw').onkeydown = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $('#pwrSw').click(); } };
+let toastT = 0; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
+
+// ---------------- animation: meters, reels, timer
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  vuL.tick(dt); vuR.tick(dt);
+  const moving = HOSTED ? hostLevel > -50 : engine.running;
+  if (moving) {
+    const ips = C.SPEEDS[P.speed], pxPerSec = ips * 25.4 * (300 / 267);        // 10.5-in reel (267 mm) = 300 viewBox units
+    const [rl, rr] = reelRadii();
+    angL += (pxPerSec / rl) * dt * 180 / Math.PI; angR += (pxPerSec / rr) * dt * 180 / Math.PI;
+    spinL.setAttribute('transform', `rotate(${angL % 360} 150 150)`); spinR.setAttribute('transform', `rotate(${angR % 360} 150 150)`);
+    if (!HOSTED && engine.source === 'file' && engine.buffer) { posFrac = 0.02 + 0.96 * (engine.position() / engine.buffer.duration); }
+    else posFrac = (posFrac + dt / 1800) % 1;
+    drawTapePath();
+    const el = engine.running && engine.ctx ? (engine.source === 'file' ? engine.position() : engine.ctx.currentTime - engine.startedAt) : 0;
+    const h = Math.floor(el / 3600), m = Math.floor(el / 60) % 60, s = Math.floor(el) % 60;
+    $('#segTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------------- fit the 1152×700 panel into the window
+function fit() { const vw = window.innerWidth, vh = window.innerHeight; const s = Math.min(vw / 1152, vh / 700); stage.style.transform = `scale(${s})`; stage.style.position = 'absolute'; stage.style.left = ((vw - 1152 * s) / 2) + 'px'; stage.style.top = ((vh - 700 * s) / 2) + 'px'; }
+window.addEventListener('resize', fit); fit();
+
+// ---------------- host mode: DAW supplies the audio
+if (HOSTED) { $('#transport').innerHTML = ''; $('#transport').append(rowLab('Audio'), Object.assign(document.createElement('div'), { className: 'disp', style: 'grid-column:span 4;padding:5px 8px', innerHTML: '<div class="l1" style="font-size:11px"><span>FROM HOST</span><span>VST3 · AU</span></div><div class="l2">DAW audio in → tape → out · timer idle</div>' })); $('#pwr').classList.add('hidden'); }
+refresh(); updateTransport();
+if (!HOSTED) setTimeout(() => toast('Drop an audio file on the deck, or pick FILE / MIC / TONE, then PLAY.'), 600);
+if (HOSTED) { setTimeout(() => hostSend('juce://param/__ready__/1'), 50); }
+window.ANALOGEXACT = { P, engine, setParam, HOSTED };
+})();
+
+</script>
+</body>
+</html>
