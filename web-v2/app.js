@@ -3,7 +3,7 @@
 // =====================================================================
 (() => {
 'use strict';
-const $ = (s, r = document) => r.querySelector(s);
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const C = AmpexCore;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const HOSTED = (typeof window.__JUCE_HOST__ !== 'undefined') || location.protocol === 'data:' || location.protocol === 'juce:';
@@ -20,29 +20,34 @@ const stage = $('#stage');
 let fromHost = false;
 
 // ---------------- rotary knobs (SVG)
-function knobSVG(size, big) {
+function knobSVG(size, big, bipolar) {
   const r = size / 2, ns = 'http://www.w3.org/2000/svg';
   let ticks = '';
   if (big) for (let i = 0; i <= 10; i++) {
     const a = (-135 + 27 * i) * Math.PI / 180, x1 = r + (r - 1) * Math.sin(a), y1 = r - (r - 1) * Math.cos(a), x2 = r + (r - 5) * Math.sin(a), y2 = r - (r - 5) * Math.cos(a);
-    ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#d8d8d2" stroke-width="${i % 5 === 0 ? 1.6 : 1}"/>`;
-    if (i % 10 === 0) { const tx = r + (r + 7) * Math.sin(a), ty = r - (r + 7) * Math.cos(a); ticks += `<text x="${tx.toFixed(1)}" y="${(ty + 3).toFixed(1)}" font-size="7.5" fill="#bdbdb6" text-anchor="middle" font-family="var(--font)" font-weight="600">${i}</text>`; }
+    const major = bipolar ? (i === 5 || i === 0 || i === 10) : (i % 5 === 0);
+    ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${bipolar && i === 5 ? '#ffb547' : '#c9ccd1'}" stroke-width="${major ? 1.6 : 1}"/>`;
+    if (i % 10 === 0 || (bipolar && i === 5)) { const tx = r + (r + 7) * Math.sin(a), ty = r - (r + 7) * Math.cos(a); const label = bipolar ? (i === 0 ? '−' : i === 10 ? '+' : '0') : String(i); ticks += `<text x="${tx.toFixed(1)}" y="${(ty + 3).toFixed(1)}" font-size="7.5" fill="#9ea3aa" text-anchor="middle" font-family="var(--font)" font-weight="600">${label}</text>`; }
   }
   const cr = big ? r - 8 : r - 4;
+  let knurl = '';
+  for (let k = 0; k < 36; k++) { const a = k * 10 * Math.PI / 180; knurl += `<line x1="${(r + (cr - 1) * Math.sin(a)).toFixed(1)}" y1="${(r - (cr - 1) * Math.cos(a)).toFixed(1)}" x2="${(r + (cr - 4) * Math.sin(a)).toFixed(1)}" y2="${(r - (cr - 4) * Math.cos(a)).toFixed(1)}" stroke="#000" stroke-opacity=".55" stroke-width="1"/>`; }
   return `<svg viewBox="0 0 ${size} ${size}" xmlns="${ns}">
-    <defs><radialGradient id="kc${size}" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#4a4a4e"/><stop offset=".6" stop-color="#1b1b1d"/><stop offset="1" stop-color="#050506"/></radialGradient>
-    <linearGradient id="ks${size}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3e"/><stop offset="1" stop-color="#121214"/></linearGradient></defs>
+    <defs><radialGradient id="kc${size}" cx="38%" cy="28%" r="78%"><stop offset="0" stop-color="#5a5f67"/><stop offset=".55" stop-color="#1e2024"/><stop offset="1" stop-color="#050506"/></radialGradient>
+    <linearGradient id="ks${size}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2e33"/><stop offset="1" stop-color="#0c0d0f"/></linearGradient>
+    <linearGradient id="kr${size}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8bec6"/><stop offset=".5" stop-color="#4a4f57"/><stop offset="1" stop-color="#9aa0a8"/></linearGradient></defs>
     ${big ? `<circle cx="${r}" cy="${r}" r="${r - 1}" fill="url(#ks${size})" stroke="#000" stroke-width=".8"/>` : ''}
     ${ticks}
-    <g class="cap"><circle cx="${r}" cy="${r}" r="${cr}" fill="url(#kc${size})" stroke="#000" stroke-width="1"/>
-      <circle cx="${r}" cy="${r}" r="${cr - 3}" fill="none" stroke="#ffffff10" stroke-width="1"/>
-      <line x1="${r}" y1="${r - cr + 3}" x2="${r}" y2="${r - cr * 0.35}" stroke="#f4f4ee" stroke-width="${big ? 2.4 : 2}" stroke-linecap="round"/></g>
+    <g class="cap"><circle cx="${r}" cy="${r}" r="${cr}" fill="url(#kr${size})"/><circle cx="${r}" cy="${r}" r="${cr - 1.5}" fill="url(#kc${size})" stroke="#000" stroke-width=".8"/>
+      ${knurl}
+      <circle cx="${r}" cy="${r}" r="${cr - 5}" fill="url(#kc${size})" stroke="#ffffff14" stroke-width="1"/>
+      <line x1="${r}" y1="${r - cr + 6}" x2="${r}" y2="${r - cr * 0.3}" stroke="#ffb547" stroke-width="${big ? 2.4 : 2}" stroke-linecap="round"/></g>
   </svg>`;
 }
 class Knob {
   constructor(el, { min, max, value, fmt, onChange, step = 0, detents = null }) {
     this.el = el; this.min = min; this.max = max; this.v = value; this.fmt = fmt; this.onChange = onChange; this.step = step; this.detents = detents;
-    const big = !el.classList.contains('sm'); el.innerHTML = knobSVG(big ? 62 : 42, big); this.cap = $('.cap', el);
+    const big = !el.classList.contains('sm'); this.bipolar = el.classList.contains('bipolar'); el.innerHTML = knobSVG(big ? 62 : 42, big, this.bipolar); this.cap = $('.cap', el);
     el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max);
     let startY = 0, startV = 0, moved = false;
     el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); startY = e.clientY; startV = this.v; moved = false; e.preventDefault(); el.focus(); });
@@ -58,6 +63,7 @@ class Knob {
     v = clamp(v, this.min, this.max);
     if (this.detents) { let best = this.detents[0]; for (const d of this.detents) if (Math.abs(d - v) < Math.abs(best - v)) best = d; v = best; }
     else if (this.step) v = Math.round(v / this.step) * this.step;
+    if (this.bipolar && user && Math.abs(v) <= (this.max - this.min) * 0.012) v = 0;
     if (v === this.v && user) return;
     this.v = v; this.render(); if (user) this.onChange(v);
   }
@@ -99,25 +105,48 @@ const vuL = new VU($('#vuLwin')), vuR = new VU($('#vuRwin'));
 
 // ---------------- reels (10.5" NAB metal reels)
 function reelSVG(id) {
-  let win = '';
-  for (let k = 0; k < 3; k++) { const a = k * 120; win += `<path transform="rotate(${a} 150 150)" d="M150 60 A90 90 0 0 1 228 105 L196 124 A53 53 0 0 0 150 97 Z" fill="#000"/>`; }
+  let win = '', rings = '', screws = '';
+  for (let k = 0; k < 3; k++) { const a = k * 120 + 60;
+    win += `<path transform="rotate(${a} 150 150)" d="M150 32 A118 118 0 0 1 252 91 L203 119.5 A61 61 0 0 0 150 89 Z" fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="round"/>`;
+    screws += `<g transform="rotate(${a} 150 150)"><circle cx="150" cy="74" r="4.2" fill="#2a2d32" stroke="#0a0a0b"/><line x1="147" y1="71" x2="153" y2="77" stroke="#9aa0a8" stroke-width="1.2"/><line x1="153" y1="71" x2="147" y2="77" stroke="#9aa0a8" stroke-width="1.2"/></g>`; }
+  for (let r = 50; r <= 134; r += 1.6) rings += `<circle cx="150" cy="150" r="${r.toFixed(1)}" fill="none" stroke="${(r * 10 | 0) % 3 === 0 ? '#2a1d13' : '#4d3826'}" stroke-width="0.9"/>`;
   return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-    <defs><radialGradient id="rm${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f1f0ea"/><stop offset=".55" stop-color="#b9b8b1"/><stop offset="1" stop-color="#7d7c76"/></radialGradient>
-    <radialGradient id="tp${id}" cx="50%" cy="50%" r="50%"><stop offset=".3" stop-color="#2f2219"/><stop offset=".9" stop-color="#4a3626"/><stop offset="1" stop-color="#2b1f16"/></radialGradient>
-    <mask id="mk${id}"><rect width="300" height="300" fill="#fff"/>${win}</mask></defs>
-    <circle cx="150" cy="150" r="149" fill="#101113"/>
-    <circle class="pack" cx="150" cy="150" r="128" fill="url(#tp${id})"/>
+    <defs>
+      <radialGradient id="fl${id}" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#eef0f2"/><stop offset=".45" stop-color="#b5bac1"/><stop offset=".8" stop-color="#6f757d"/><stop offset="1" stop-color="#3b3f45"/></radialGradient>
+      <linearGradient id="sp${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
+      <radialGradient id="hb${id}" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#3a3e45"/><stop offset=".7" stop-color="#121316"/><stop offset="1" stop-color="#050506"/></radialGradient>
+      <radialGradient id="pk${id}" cx="50%" cy="50%" r="50%"><stop offset=".3" stop-color="#1e150e"/><stop offset=".95" stop-color="#2a1d13"/><stop offset="1" stop-color="#5a4330"/></radialGradient>
+      <clipPath id="pc${id}"><circle class="pack" cx="150" cy="150" r="128"/></clipPath>
+      <mask id="mk${id}"><rect width="300" height="300" fill="#fff"/>${win}</mask>
+    </defs>
+    <!-- back flange -->
+    <circle cx="150" cy="150" r="149" fill="#0a0b0c"/><circle cx="150" cy="150" r="146" fill="none" stroke="#2a2d32" stroke-width="1"/>
+    <!-- tape pack (clipped to the current pack radius) -->
+    <g clip-path="url(#pc${id})"><circle cx="150" cy="150" r="140" fill="url(#pk${id})"/>${rings}</g>
+    <circle class="pack" cx="150" cy="150" r="128" fill="none" stroke="#7a5a3e" stroke-width="1.2" opacity=".9"/>
+    <!-- front flange -->
     <g class="spin">
-      <g mask="url(#mk${id})"><circle cx="150" cy="150" r="146" fill="url(#rm${id})" stroke="#5a5955" stroke-width="1.5"/>
-      <circle cx="150" cy="150" r="138" fill="none" stroke="#ffffff55" stroke-width="1"/></g>
-      <circle cx="150" cy="150" r="48" fill="#1b1c1f" stroke="#55565a" stroke-width="2"/>
-      <circle cx="150" cy="150" r="30" fill="#2a2b2f" stroke="#000"/>
-      <g fill="#cfcec8"><circle cx="150" cy="117" r="4"/><circle cx="178.6" cy="166.5" r="4"/><circle cx="121.4" cy="166.5" r="4"/></g>
-      <circle cx="150" cy="150" r="9" fill="#0b0b0c"/>
+      <g mask="url(#mk${id})">
+        <circle cx="150" cy="150" r="146" fill="url(#fl${id})"/>
+        <circle cx="150" cy="150" r="146" fill="url(#sp${id})"/>
+        <circle cx="150" cy="150" r="146" fill="none" stroke="#1a1c20" stroke-width="2.5"/>
+        <circle cx="150" cy="150" r="142" fill="none" stroke="#ffffff66" stroke-width="1"/>
+        <circle cx="150" cy="150" r="136" fill="none" stroke="#00000033" stroke-width="1"/>
+        <circle cx="150" cy="150" r="132" fill="none" stroke="#ffffff1f" stroke-width="1"/><circle cx="150" cy="150" r="66" fill="none" stroke="#00000040" stroke-width="1"/><circle cx="150" cy="150" r="62" fill="none" stroke="#ffffff22" stroke-width="1"/>
+      </g>
+      ${screws}
+      <!-- hub -->
+      <circle cx="150" cy="150" r="52" fill="url(#hb${id})" stroke="#000" stroke-width="1.5"/>
+      <circle cx="150" cy="150" r="49" fill="none" stroke="#ffffff22" stroke-width="1"/>
+      <circle cx="150" cy="150" r="41" fill="#0b0c0e" stroke="#2a2d32" stroke-width="1"/>
+      <g fill="#e2e5e9"><circle cx="150" cy="120" r="3.6"/><circle cx="176" cy="165" r="3.6"/><circle cx="124" cy="165" r="3.6"/></g>
+      <circle cx="150" cy="150" r="22" fill="url(#hb${id})" stroke="#000"/>
+      <path d="M150 131 L153 137 L147 137 Z M166.5 159.5 L160 158 L163 153 Z M133.5 159.5 L137 153 L140 158 Z" fill="#9aa0a8"/>
+      <circle cx="150" cy="150" r="7" fill="#040405" stroke="#3a3e45"/>
     </g></svg>`;
 }
 $('#reelL').innerHTML = reelSVG('L'); $('#reelR').innerHTML = reelSVG('R');
-const spinL = $('#reelL .spin'), spinR = $('#reelR .spin'), packL = $('#reelL .pack'), packR = $('#reelR .pack');
+const spinL = $('#reelL .spin'), spinR = $('#reelR .spin'), packL = $$('#reelL .pack'), packR = $$('#reelR .pack');
 let angL = 0, angR = 0, posFrac = 0.15;   // fraction of the tape wound onto the take-up reel
 const REEL_PX = 264, RSC = REEL_PX / 300, CXL = 118 + REEL_PX / 2, CXR = 770 + REEL_PX / 2, CY = 34 + REEL_PX / 2;
 function reelRadii() { const rmin = 52, rmax = 128; const a = (1 - posFrac) * (rmax * rmax - rmin * rmin) + rmin * rmin, b = posFrac * (rmax * rmax - rmin * rmin) + rmin * rmin; return [Math.sqrt(a), Math.sqrt(b)]; }   // in viewBox units (300 = reel)
@@ -131,7 +160,7 @@ function drawTapePath() {
   const d = `M${p1[0].toFixed(1)} ${p1[1].toFixed(1)} L${gx1} ${gy1 - gr} ${mid} L${gx2} ${gy2 - gr} L${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
   $('#tapePath').setAttribute('d', d); $('#tapePathHi').setAttribute('d', d);
   const dt = `M${gx1} ${gy1 - gr} ${mid} L${gx2} ${gy2 - gr}`; $('#tapePathTop').setAttribute('d', dt); $('#tapePathTopHi').setAttribute('d', dt);
-  packL.setAttribute('r', rl.toFixed(1)); packR.setAttribute('r', rr.toFixed(1));
+  packL.forEach(e => e.setAttribute('r', rl.toFixed(1))); packR.forEach(e => e.setAttribute('r', rr.toFixed(1)));
 }
 drawTapePath();
 
@@ -163,7 +192,7 @@ const knobs = {
   inDb: new Knob($('#k-in'), { min: -12, max: 12, value: P.inDb, step: 0.1, fmt: fmtDb('#v-in'), onChange: v => setParam('inDb', v, true) }),
   outDb: new Knob($('#k-out'), { min: -24, max: 6, value: P.outDb, step: 0.1, fmt: fmtDb('#v-out'), onChange: v => setParam('outDb', v, true) }),
   biasDb: new Knob($('#k-bias'), { min: -5, max: 5, value: P.biasDb, step: 0.1, fmt: fmtDb('#v-bias'), onChange: v => setParam('biasDb', v, true) }),
-  headroomDb: new Knob($('#k-cal'), { min: -12, max: 12, value: P.headroomDb, step: 0.5, fmt: (v) => { fmtDb('#v-cal')(v); const d = v - 18; $('#calTxt').textContent = (d > 0 ? '+' : '\u2212') + Math.abs(d).toFixed(1).replace(/\.0$/, '') + ' dBFS'; }, onChange: v => setParam('headroomDb', v, true) }),
+  headroomDb: new Knob($('#k-cal'), { min: -12, max: 12, value: P.headroomDb, step: 0.5, fmt: (v) => { const d = v - 18; const dbfs = (d > 0 ? '+' : '\u2212') + Math.abs(d).toFixed(1).replace(/\.0$/, '') + ' dBFS'; $('#v-cal').textContent = (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(1) + ' dB'; $('#calTxt').textContent = dbfs; $('#k-cal').title = 'Headroom: 0 VU = ' + dbfs + ' (−12 … +12, 0 centre)'; }, onChange: v => setParam('headroomDb', v, true) }),
   mix: new Knob($('#k-mix'), { min: 0, max: 1, value: P.mix, step: 0.01, fmt: v => { $('#v-mix').textContent = Math.round(v * 100) + ' %'; }, onChange: v => setParam('mix', v, true) }),
   postDb: new Knob($('#k-post'), { min: -12, max: 12, value: P.postDb, step: 0.1, fmt: fmtDb('#v-post'), onChange: v => setParam('postDb', v, true) }),
   preserveAmount: new Knob($('#k-pres'), { min: 0, max: 1, value: P.preserveAmount, step: 0.01, fmt: v => { $('#v-pres').textContent = Math.round(v * 100) + ' %'; }, onChange: v => setParam('preserveAmount', v, true) }),
