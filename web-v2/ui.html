@@ -30,10 +30,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #bridge{position:absolute;left:36px;top:18px;width:1080px;height:184px;border-radius:6px;padding:9px;
   background:linear-gradient(180deg,#e4e3dd,#cfcec8 60%,#b8b7b0);box-shadow:0 1px 0 #fff6 inset,0 -1px 0 #0003 inset,0 14px 30px #0008,0 2px 4px #0007;
   display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.io{position:relative;border-radius:3px;background:linear-gradient(180deg,#141416,#0f0f11);box-shadow:0 0 0 1px #0a0a0a,0 1px 0 #ffffff33;display:grid;grid-template-columns:232px 1fr;}
+.io{position:relative;overflow:hidden;border-radius:3px;background:linear-gradient(180deg,#141416,#0f0f11);box-shadow:0 0 0 1px #0a0a0a,0 1px 0 #ffffff33;display:grid;grid-template-columns:232px 1fr;}
 .io .ch{position:absolute;right:10px;bottom:6px;font-size:10px;letter-spacing:.14em;color:#8a8a84;font-weight:600}
 .io .vu{padding:12px 0 0 12px}
-.io .controls{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;padding:14px 10px 8px 4px;gap:0 2px}
+.io .controls{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;padding:12px 10px 6px 4px;gap:0 2px}
 .vu-win{width:208px;height:126px;border-radius:3px;position:relative;overflow:hidden;background:#0a0a0a;box-shadow:0 0 0 1px #000,0 0 0 2px #2d2d2d,inset 0 0 18px #000}
 .vu-win svg{position:absolute;inset:0;width:100%;height:100%}
 .vu-face{fill:var(--vu-face-off);transition:fill .5s}
@@ -45,14 +45,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .vu-leg b{color:#b3b3ac;font-weight:600}
 
 /* knob */
-.ctl{display:grid;justify-items:center;gap:3px;position:relative}
+.ctl{display:grid;justify-items:center;gap:2px;position:relative}
 .ctl .lab{font-size:9.5px;letter-spacing:.14em;color:#c9c9c2;font-weight:600;text-transform:uppercase}
-.ctl .val{font-family:var(--mono);font-size:10px;color:var(--amber);min-height:12px;opacity:.95}
+.ctl .val{font-family:var(--mono);font-size:9.5px;color:var(--amber);min-height:11px;line-height:1.15;opacity:.95}
 .knob{width:62px;height:62px;position:relative;cursor:ns-resize;touch-action:none}
 .knob svg{width:100%;height:100%;display:block;overflow:visible}
 .knob .cap{transform-origin:31px 31px}
-.knob.sm{width:46px;height:46px}
-.knob.sm .cap{transform-origin:23px 23px}
+.knob.sm{width:42px;height:42px}
+.knob.sm .cap{transform-origin:21px 21px}
 .knob:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:50%}
 
 /* ---------- deck ---------- */
@@ -132,7 +132,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </head>
 <body>
 <div id="viewport">
-<div id="stage" class="off">
+<div id="stage" class="on">
 
   <!-- ================= METER BRIDGE : two I/O modules ================= -->
   <section id="bridge" aria-label="Input/Output modules">
@@ -144,7 +144,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="controls">
         <div class="ctl"><span class="lab">Record</span><div class="knob" id="k-in" tabindex="0" role="slider" aria-label="Record (input) level"></div><span class="val" id="v-in">0.0 dB</span></div>
         <div class="ctl"><span class="lab">Reproduce</span><div class="knob" id="k-out" tabindex="0" role="slider" aria-label="Reproduce (output) level"></div><span class="val" id="v-out">0.0 dB</span></div>
-        <div class="ctl" style="gap:6px">
+        <div class="ctl" style="gap:4px">
           <div class="ctl"><span class="lab">Bias</span><div class="knob sm" id="k-bias" tabindex="0" role="slider" aria-label="Bias"></div><span class="val" id="v-bias">0.0 dB</span></div>
           <div class="ctl"><span class="lab">Cal</span><div class="knob sm" id="k-cal" tabindex="0" role="slider" aria-label="Calibration (headroom)"></div><span class="val" id="v-cal">0.0 dB</span></div>
         </div>
@@ -158,7 +158,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="controls">
         <div class="ctl"><span class="lab">Mix</span><div class="knob" id="k-mix" tabindex="0" role="slider" aria-label="Mix"></div><span class="val" id="v-mix">100 %</span></div>
         <div class="ctl"><span class="lab">Output</span><div class="knob" id="k-post" tabindex="0" role="slider" aria-label="Output trim"></div><span class="val" id="v-post">0.0 dB</span></div>
-        <div class="ctl" style="gap:6px">
+        <div class="ctl" style="gap:4px">
           <div class="ctl"><span class="lab">Preserve</span><div class="knob sm" id="k-pres" tabindex="0" role="slider" aria-label="Preserve original character"></div><span class="val" id="v-pres">0 %</span></div>
           <div class="ctl"><span class="lab">Source</span><div class="disp" id="srcDisp" style="font-size:10px;padding:3px 7px;min-width:52px;text-align:center">—</div></div>
         </div>
@@ -193,7 +193,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="base">
         <div class="brand"><span id="headTxt"><b>½ IN · 2 TRACK</b>ATR-102 HEADS</span><br><a href="https://github.com/robertcossey19/ampex-atr102-vst3" target="_blank" rel="noopener" style="color:#55554f;text-decoration:none">ANALOGEXACT V2</a></div>
         <div id="speed" title="Tape speed">
-          <div class="ticks"><span style="left:6px;top:47px">7½</span><span style="left:35px;top:5px">15</span><span style="left:64px;top:47px">30</span><div class="knob sm" id="k-speed" tabindex="0" role="slider" aria-label="Tape speed" style="position:absolute;left:12px;top:6px"></div></div>
+          <div class="ticks"><span style="left:6px;top:47px">7½</span><span style="left:35px;top:5px">15</span><span style="left:64px;top:47px">30</span><div class="knob sm" id="k-speed" tabindex="0" role="slider" aria-label="Tape speed" style="position:absolute;left:14px;top:8px"></div></div>
           <div class="lab">Speed<b id="speedTxt">15 ips</b></div>
         </div>
       </div>

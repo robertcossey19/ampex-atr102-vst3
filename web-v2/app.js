@@ -42,7 +42,7 @@ function knobSVG(size, big) {
 class Knob {
   constructor(el, { min, max, value, fmt, onChange, step = 0, detents = null }) {
     this.el = el; this.min = min; this.max = max; this.v = value; this.fmt = fmt; this.onChange = onChange; this.step = step; this.detents = detents;
-    const big = !el.classList.contains('sm'); el.innerHTML = knobSVG(big ? 62 : 46, big); this.cap = $('.cap', el);
+    const big = !el.classList.contains('sm'); el.innerHTML = knobSVG(big ? 62 : 42, big); this.cap = $('.cap', el);
     el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max);
     let startY = 0, startV = 0, moved = false;
     el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); startY = e.clientY; startV = this.v; moved = false; e.preventDefault(); el.focus(); });
@@ -290,8 +290,9 @@ function updateTransport() {
   $('#srcDisp').textContent = engine.source === 'file' ? (engine.fileName ? engine.fileName.replace(/\.[^.]+$/, '').slice(0, 10) : 'FILE') : engine.source.toUpperCase();
   setPower(!!engine.ctx && engine.ctx.state === 'running');
 }
-function setPower(on) { stage.classList.toggle('off', !on); stage.classList.toggle('on', on); $('#pwr').classList.toggle('on', on); $('#pwrSw').setAttribute('aria-checked', on); $('#pwrTxt').textContent = on ? 'ON' : 'OFF'; $('#pwrTxt').style.color = on ? 'var(--amber)' : '#8a8a84'; }
-$('#pwrSw').onclick = async () => { if (engine.ctx && engine.ctx.state === 'running') { engine.stop(); await engine.ctx.suspend(); } else { await engine.start(); } updateTransport(); };
+let userOff = false;
+function setPower(on) { const lit = on || !userOff; stage.classList.toggle('off', !lit); stage.classList.toggle('on', lit); $('#pwr').classList.toggle('on', on); $('#pwrSw').setAttribute('aria-checked', on); $('#pwrTxt').textContent = on ? 'ON' : 'OFF'; $('#pwrTxt').style.color = on ? 'var(--amber)' : '#8a8a84'; }
+$('#pwrSw').onclick = async () => { if (engine.ctx && engine.ctx.state === 'running') { userOff = true; engine.stop(); await engine.ctx.suspend(); } else { userOff = false; await engine.start(); } updateTransport(); };
 $('#pwrSw').onkeydown = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $('#pwrSw').click(); } };
 let toastT = 0; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
 
