@@ -670,7 +670,6 @@ const RANGE = { inDb: [-12, 12], outDb: [-24, 6], biasDb: [-5, 5], headroomDb: [
 const CONFIG_KEYS = new Set(['tapeType', 'speed', 'eqStd', 'flux', 'biasDb', 'transformer', 'vibe', 'headblock']);
 const TAPE_NAMES = ['406', '456', '499', 'GP9', 'SM900', 'SM911'];
 const TAPE_LONG = ['Ampex 406', 'Ampex 456 Grand Master', 'Ampex 499 Grand Master Gold', 'Quantegy GP9', 'EMTEC/RMGI SM900', 'EMTEC/RMGI SM911'];
-try { const s = JSON.parse(localStorage.getItem('ae.atr102.params') || 'null'); if (s && !HOSTED) Object.assign(P, s); } catch (e) {}
 
 const stage = $('#stage');
 let fromHost = false;
@@ -859,7 +858,7 @@ function setParam(id, v, user) {
   P[id] = v;
   refresh();
   if (CONFIG_KEYS.has(id)) scheduleDesign(); else engine.pushParams();
-  if (user) { toHost(id, v); if (!HOSTED) try { localStorage.setItem('ae.atr102.params', JSON.stringify(P)); } catch (e) {} }
+  if (user) toHost(id, v);
 }
 function scheduleDesign() { clearTimeout(designTimer); designTimer = setTimeout(() => engine.pushConfig(), 40); }
 
